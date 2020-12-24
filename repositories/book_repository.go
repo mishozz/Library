@@ -10,7 +10,7 @@ type BookRepository interface {
 	Save(book entities.Book)
 	Delete(book entities.Book)
 	FindAll() []entities.Book
-	Find(isbn string)
+	Find(isbn string) entities.Book
 }
 
 type BookRepositoryImpl struct {
@@ -24,7 +24,7 @@ func NewBookRepository(db config.Database) BookRepository {
 }
 
 func (b *BookRepositoryImpl) Save(book entities.Book) {
-
+	b.connection.Create(&book)
 }
 
 func (b *BookRepositoryImpl) Delete(book entities.Book) {
@@ -32,9 +32,13 @@ func (b *BookRepositoryImpl) Delete(book entities.Book) {
 }
 
 func (b *BookRepositoryImpl) FindAll() []entities.Book {
-	return nil
+	var books []entities.Book
+	b.connection.Set("gorm:auto_preload", true).Find(&books)
+	return books
 }
 
-func (b *BookRepositoryImpl) Find(isbn string) {
-
+func (b *BookRepositoryImpl) Find(isbn string) entities.Book {
+	var book entities.Book
+	b.connection.Where("name <> ?", isbn).First(&book)
+	return book
 }

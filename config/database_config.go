@@ -8,27 +8,23 @@ import (
 	"gorm.io/gorm"
 )
 
-type DatabaseProvider interface {
-	CloseDB() error
-}
-
 type Database struct {
 	Connection *gorm.DB
 }
 
-func NewDatabaseProvider() DatabaseProvider {
+func NewDatabaseConfig() Database {
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		errors.Wrap(err, "unable to open db connection")
 	}
 	db.AutoMigrate(&entities.Book{}, &entities.User{})
 
-	return &Database{
+	return Database{
 		Connection: db,
 	}
 }
 
-func (db *Database) CloseDB() error {
+func CloseDB(db Database) error {
 	zap.L().Debug("Closing db connection")
 
 	sqlDB, err := db.Connection.DB()

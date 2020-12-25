@@ -4,10 +4,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/service"
+	"gopkg.in/go-playground/validator.v9"
 )
 
+var validate *validator.Validate
+
 type BookController interface {
-	FindAll() []entities.Book
+	GetAll() []entities.Book
+	GetByIsbn(isbn string) (entities.Book, error)
 	Save(ctx *gin.Context) error
 }
 
@@ -21,7 +25,7 @@ func NewController(service service.BookService) BookController {
 	}
 }
 
-func (c *bookController) FindAll() []entities.Book {
+func (c *bookController) GetAll() []entities.Book {
 	return c.service.FindAll()
 }
 
@@ -31,11 +35,15 @@ func (c *bookController) Save(ctx *gin.Context) error {
 	if err != nil {
 		return err
 	}
-	// err = validate.Struct(video)
-	// if err != nil {
-	// 	return err
-	// }
+	if c.service.BookExists(book.Isbn) {
+		return ConflictErr
+	}
+
 	c.service.Save(book)
 	return nil
 
+}
+
+func (c *bookController) GetByIsbn(isbn string) (entities.Book, error) {
+	return c.service.FindByIsbn(isbn), nil
 }

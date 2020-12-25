@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/config"
 	"github.com/mishozz/Library/controller"
@@ -22,7 +20,6 @@ var (
 )
 
 func main() {
-	fmt.Print("sdsds")
 	defer config.CloseDB(db)
 
 	server := gin.New()

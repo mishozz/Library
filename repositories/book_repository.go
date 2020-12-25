@@ -39,6 +39,6 @@ func (b *BookRepositoryImpl) FindAll() []entities.Book {
 
 func (b *BookRepositoryImpl) Find(isbn string) entities.Book {
 	var book entities.Book
-	b.connection.Where("name <> ?", isbn).First(&book)
+	b.connection.Where("Isbn = ?", isbn).First(&book)
 	return book
 }

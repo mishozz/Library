@@ -1,13 +1,17 @@
 package service
 
 import (
+	"reflect"
+
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
 )
 
 type BookService interface {
-	Save(entities.Book) error
+	Save(entities.Book)
 	FindAll() []entities.Book
+	FindByIsbn(isbn string) entities.Book
+	BookExists(isbn string) bool
 }
 
 type bookService struct {
@@ -20,11 +24,19 @@ func NewBookService(repo repositories.BookRepository) BookService {
 	}
 }
 
-func (s *bookService) Save(book entities.Book) error {
+func (s *bookService) Save(book entities.Book) {
 	s.repository.Save(book)
-	return nil
 }
 
 func (s *bookService) FindAll() []entities.Book {
 	return s.repository.FindAll()
+}
+
+func (s *bookService) FindByIsbn(isbn string) entities.Book {
+	return s.repository.Find(isbn)
+}
+
+func (s *bookService) BookExists(isbn string) bool {
+	book := s.repository.Find(isbn)
+	return !reflect.ValueOf(book).IsZero()
 }

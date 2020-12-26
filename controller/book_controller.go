@@ -36,7 +36,7 @@ func (c *bookController) Save(ctx *gin.Context) error {
 		return err
 	}
 	if c.service.BookExists(book.Isbn) {
-		return ConflictErr
+		return ConflictError
 	}
 
 	c.service.Save(book)
@@ -44,6 +44,9 @@ func (c *bookController) Save(ctx *gin.Context) error {
 
 }
 
-func (c *bookController) GetByIsbn(isbn string) (entities.Book, error) {
+func (c *bookController) GetByIsbn(isbn string) (book entities.Book, err error) {
+	if !c.service.BookExists(isbn) {
+		return book, NotFoundError
+	}
 	return c.service.FindByIsbn(isbn), nil
 }

@@ -17,7 +17,7 @@ type BookRepositoryImpl struct {
 	connection *gorm.DB
 }
 
-func NewBookRepository(db config.Database) BookRepository {
+func NewBookRepository(db config.Database) *BookRepositoryImpl {
 	return &BookRepositoryImpl{
 		connection: db.Connection,
 	}

@@ -19,7 +19,7 @@ type bookController struct {
 	service service.BookService
 }
 
-func NewController(service service.BookService) BookController {
+func NewController(service service.BookService) *bookController {
 	return &bookController{
 		service: service,
 	}

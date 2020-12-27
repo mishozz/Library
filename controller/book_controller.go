@@ -1,52 +1,76 @@
 package controller
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/service"
-	"gopkg.in/go-playground/validator.v9"
+	"github.com/pkg/errors"
 )
 
-var validate *validator.Validate
+const LIBRARY_API_V1 = "/library/api/v1/"
+
+var (
+	ConflictError = errors.New("Every book must have a unique ISBN!")
+	NotFoundError = errors.New("Book not found")
+)
+
+func HandleRequests(server *gin.Engine, bookController BookController) {
+	apiRoutes := server.Group(LIBRARY_API_V1)
+	{
+		apiRoutes.GET("/books", func(ctx *gin.Context) {
+			bookController.GetAll(ctx)
+		})
+
+		apiRoutes.GET("/books/:isbn", func(ctx *gin.Context) {
+			bookController.GetByIsbn(ctx)
+		})
+
+		apiRoutes.POST("/books", func(ctx *gin.Context) {
+			bookController.Save(ctx)
+		})
+	}
+}
 
 type BookController interface {
-	GetAll() []entities.Book
-	GetByIsbn(isbn string) (entities.Book, error)
-	Save(ctx *gin.Context) error
+	GetAll(ctx *gin.Context)
+	GetByIsbn(ctx *gin.Context)
+	Save(ctx *gin.Context)
 }
 
 type bookController struct {
 	service service.BookService
 }
 
-func NewController(service service.BookService) *bookController {
+func NewBookController(service service.BookService) *bookController {
 	return &bookController{
 		service: service,
 	}
 }
 
-func (c *bookController) GetAll() []entities.Book {
-	return c.service.FindAll()
+func (c *bookController) GetAll(ctx *gin.Context) {
+	ctx.JSON(200, c.service.FindAll())
 }
 
-func (c *bookController) Save(ctx *gin.Context) error {
+func (c *bookController) Save(ctx *gin.Context) {
 	var book entities.Book
 	err := ctx.ShouldBindJSON(&book)
 	if err != nil {
-		return err
+		ctx.JSON(http.StatusBadRequest, gin.H{"error_message": "Invalid request body"})
 	}
 	if c.service.BookExists(book.Isbn) {
-		return ConflictError
+		ctx.JSON(http.StatusConflict, gin.H{"error_message": ConflictError})
 	}
 
 	c.service.Save(book)
-	return nil
-
+	ctx.JSON(http.StatusCreated, book)
 }
 
-func (c *bookController) GetByIsbn(isbn string) (book entities.Book, err error) {
+func (c *bookController) GetByIsbn(ctx *gin.Context) {
+	isbn := ctx.Param("isbn")
 	if !c.service.BookExists(isbn) {
-		return book, NotFoundError
+		ctx.JSON(http.StatusNotFound, gin.H{"error_message": NotFoundError})
 	}
-	return c.service.FindByIsbn(isbn), nil
+	ctx.JSON(200, c.service.FindByIsbn(isbn))
 }

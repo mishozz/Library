@@ -6,6 +6,7 @@ import (
 
 	"github.com/mishozz/Library/config"
 	"github.com/mishozz/Library/entities"
+	"github.com/mishozz/Library/utils"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/sqlite"
@@ -39,7 +40,7 @@ func assertEqualBooks(t *testing.T, expected entities.Book, actual entities.Book
 
 func Test_BookRepository_Save_Find(t *testing.T) {
 	db := newTestDatabaseConnection()
-	defer config.CloseDB(db)
+	defer utils.CloseDB(db.Connection)
 	defer deleteFromTables(db, "users", "books")
 
 	bookRepo := NewBookRepository(db)
@@ -59,7 +60,7 @@ func Test_BookRepository_Save_Find(t *testing.T) {
 
 func Test_BookRepository_FindAll(t *testing.T) {
 	db := newTestDatabaseConnection()
-	defer config.CloseDB(db)
+	defer utils.CloseDB(db.Connection)
 	defer deleteFromTables(db, "users", "books")
 
 	bookRepo := NewBookRepository(db)

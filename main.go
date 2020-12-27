@@ -6,6 +6,7 @@ import (
 	"github.com/mishozz/Library/controller"
 	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/service"
+	"github.com/mishozz/Library/utils"
 )
 
 const (
@@ -16,11 +17,11 @@ var (
 	db                                         = config.NewDatabaseConfig()
 	bookRepository repositories.BookRepository = repositories.NewBookRepository(db)
 	bookService    service.BookService         = service.NewBookService(bookRepository)
-	bookController controller.BookController   = controller.NewController(bookService)
+	bookController controller.BookController   = controller.NewBookController(bookService)
 )
 
 func main() {
-	defer config.CloseDB(db)
+	defer utils.CloseDB(db.Connection)
 
 	server := gin.New()
 

@@ -71,6 +71,7 @@ func (c *bookController) GetByIsbn(ctx *gin.Context) {
 	isbn := ctx.Param("isbn")
 	if !c.service.BookExists(isbn) {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: NotFoundError})
+	} else {
+		ctx.JSON(200, c.service.FindByIsbn(isbn))
 	}
-	ctx.JSON(200, c.service.FindByIsbn(isbn))
 }

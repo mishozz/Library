@@ -166,3 +166,60 @@ func Test_BookController_Save(t *testing.T) {
 	}
 
 }
+
+func Test_BookController_GetByIsbn(t *testing.T) {
+	validBook := entities.Book{
+		Isbn:           "test",
+		Author:         "test",
+		Title:          "test",
+		AvailableUnits: 1,
+	}
+	tests := []struct {
+		name            string
+		isbn            string
+		mockBookService func(m *mockBookService) *mockBookService
+		respBody        gin.H
+		statusCode      int
+	}{{
+		name: "success",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("BookExists", "test").Return(true)
+			m.On("FindByIsbn", "test").Return(validBook)
+			return m
+		},
+		isbn:       "test",
+		statusCode: http.StatusOK,
+		respBody:   gin.H{"Author": "test", "AvailableUnits": float64(1), "Isbn": "test", "Title": "test"},
+	}, {
+		name: "invalid book",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("BookExists", "test").Return(false)
+			return m
+		},
+		isbn:       "test",
+		statusCode: http.StatusNotFound,
+		respBody:   gin.H{ERROR_MESSAGE: NotFoundError},
+	}}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockBookService{}
+			controller := NewBookController(tt.mockBookService(mock))
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Params = append(c.Params, gin.Param{Key: "isbn", Value: "test"})
+			controller.GetByIsbn(c)
+
+			var actualBody gin.H
+			err := json.Unmarshal(w.Body.Bytes(), &actualBody)
+			if err != nil {
+				t.FailNow()
+			}
+
+			assert.Equal(t, tt.respBody, actualBody)
+			assert.Equal(t, tt.statusCode, w.Code)
+			mock.AssertExpectations(t)
+		})
+	}
+}

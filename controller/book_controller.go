@@ -6,14 +6,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/service"
-	"github.com/pkg/errors"
 )
 
-const LIBRARY_API_V1 = "/library/api/v1/"
-
-var (
-	ConflictError = errors.New("Every book must have a unique ISBN!")
-	NotFoundError = errors.New("Book not found")
+const (
+	LIBRARY_API_V1  = "/library/api/v1/"
+	SAVE_SUCCESS    = "successfully saved"
+	INVALID_REQUEST = "Invalid request body"
+	ERROR_MESSAGE   = "error message"
+	ConflictError   = "Every book must have a unique ISBN!"
+	NotFoundError   = "Book not found"
 )
 
 func HandleRequests(server *gin.Engine, bookController BookController) {
@@ -57,20 +58,19 @@ func (c *bookController) Save(ctx *gin.Context) {
 	var book entities.Book
 	err := ctx.ShouldBindJSON(&book)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error_message": "Invalid request body"})
+		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
+	} else if c.service.BookExists(book.Isbn) {
+		ctx.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: ConflictError})
+	} else {
+		c.service.Save(book)
+		ctx.JSON(http.StatusCreated, gin.H{"message": SAVE_SUCCESS})
 	}
-	if c.service.BookExists(book.Isbn) {
-		ctx.JSON(http.StatusConflict, gin.H{"error_message": ConflictError})
-	}
-
-	c.service.Save(book)
-	ctx.JSON(http.StatusCreated, book)
 }
 
 func (c *bookController) GetByIsbn(ctx *gin.Context) {
 	isbn := ctx.Param("isbn")
 	if !c.service.BookExists(isbn) {
-		ctx.JSON(http.StatusNotFound, gin.H{"error_message": NotFoundError})
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: NotFoundError})
 	}
 	ctx.JSON(200, c.service.FindByIsbn(isbn))
 }

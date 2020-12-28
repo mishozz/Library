@@ -21,6 +21,8 @@ func (m *mockBookRepository) FindAll() []entities.Book {
 	return args.Get(0).([]entities.Book)
 }
 
+func (m *mockBookRepository) UpdateUnits(book entities.Book) {}
+
 func (m *mockBookRepository) Find(isbn string) entities.Book {
 	args := m.Called(isbn)
 	return args.Get(0).(entities.Book)

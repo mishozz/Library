@@ -131,7 +131,7 @@ func Test_BookController_Save(t *testing.T) {
 		},
 		input:      validBook,
 		statusCode: http.StatusConflict,
-		respBody:   gin.H{ERROR_MESSAGE: ConflictError},
+		respBody:   gin.H{ERROR_MESSAGE: BOOK_CONFLICT},
 	}}
 	for _, tt := range tests {
 		tt := tt
@@ -198,7 +198,7 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 		},
 		isbn:       "test",
 		statusCode: http.StatusNotFound,
-		respBody:   gin.H{ERROR_MESSAGE: NotFoundError},
+		respBody:   gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND},
 	}}
 	for _, tt := range tests {
 		tt := tt

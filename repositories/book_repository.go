@@ -11,6 +11,7 @@ type BookRepository interface {
 	Delete(book entities.Book)
 	FindAll() []entities.Book
 	Find(isbn string) entities.Book
+	UpdateUnits(book entities.Book)
 }
 
 type BookRepositoryImpl struct {
@@ -41,4 +42,7 @@ func (b *BookRepositoryImpl) Find(isbn string) entities.Book {
 	var book entities.Book
 	b.connection.Where("Isbn = ?", isbn).First(&book)
 	return book
+}
+func (b *BookRepositoryImpl) UpdateUnits(book entities.Book) {
+	b.connection.Model(&book).Update("available_units", book.AvailableUnits)
 }

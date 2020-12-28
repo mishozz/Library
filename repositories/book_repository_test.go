@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/mishozz/Library/config"
@@ -12,6 +13,15 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+var db config.Database
+
+func TestMain(m *testing.M) {
+	db = newTestDatabaseConnection()
+	code := m.Run()
+	utils.CloseDB(db.Connection)
+	os.Exit(code)
+}
 
 func deleteFromTables(db config.Database, tables ...string) {
 	for _, table := range tables {
@@ -31,16 +41,14 @@ func newTestDatabaseConnection() config.Database {
 	}
 }
 
-func assertEqualBooks(t *testing.T, expected entities.Book, actual entities.Book) {
-	assert.Equal(t, expected.Isbn, actual.Isbn)
-	assert.Equal(t, expected.Author, actual.Author)
-	assert.Equal(t, expected.AvailableUnits, actual.AvailableUnits)
-	assert.Equal(t, expected.Title, actual.Title)
+func Test_NewBookRepository(t *testing.T) {
+	db = config.Database{Connection: &gorm.DB{}}
+	repo := NewBookRepository(db)
+	assert.NotNil(t, repo.connection)
 }
 
 func Test_BookRepository_Save_Find(t *testing.T) {
-	db := newTestDatabaseConnection()
-	defer utils.CloseDB(db.Connection)
+	db = newTestDatabaseConnection()
 	defer deleteFromTables(db, "users", "books")
 
 	bookRepo := NewBookRepository(db)
@@ -59,8 +67,7 @@ func Test_BookRepository_Save_Find(t *testing.T) {
 }
 
 func Test_BookRepository_FindAll(t *testing.T) {
-	db := newTestDatabaseConnection()
-	defer utils.CloseDB(db.Connection)
+	db = newTestDatabaseConnection()
 	defer deleteFromTables(db, "users", "books")
 
 	bookRepo := NewBookRepository(db)
@@ -84,4 +91,11 @@ func Test_BookRepository_FindAll(t *testing.T) {
 
 	assertEqualBooks(t, book1, books[0])
 	assertEqualBooks(t, book2, books[1])
+}
+
+func assertEqualBooks(t *testing.T, expected entities.Book, actual entities.Book) {
+	assert.Equal(t, expected.Isbn, actual.Isbn)
+	assert.Equal(t, expected.Author, actual.Author)
+	assert.Equal(t, expected.AvailableUnits, actual.AvailableUnits)
+	assert.Equal(t, expected.Title, actual.Title)
 }

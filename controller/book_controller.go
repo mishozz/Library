@@ -13,11 +13,11 @@ const (
 	SAVE_SUCCESS    = "successfully saved"
 	INVALID_REQUEST = "Invalid request body"
 	ERROR_MESSAGE   = "error message"
-	ConflictError   = "Every book must have a unique ISBN!"
-	NotFoundError   = "Book not found"
+	BOOK_CONFLICT   = "Every book must have a unique ISBN!"
+	BOOK_NOT_FOUND  = "Book not found"
 )
 
-func HandleRequests(server *gin.Engine, bookController BookController) {
+func HandleBookRequests(server *gin.Engine, bookController BookController) {
 	apiRoutes := server.Group(LIBRARY_API_V1)
 	{
 		apiRoutes.GET("/books", func(ctx *gin.Context) {
@@ -60,7 +60,7 @@ func (c *bookController) Save(ctx *gin.Context) {
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
 	} else if c.service.BookExists(book.Isbn) {
-		ctx.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: ConflictError})
+		ctx.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: BOOK_CONFLICT})
 	} else {
 		c.service.Save(book)
 		ctx.JSON(http.StatusCreated, gin.H{"message": SAVE_SUCCESS})
@@ -70,7 +70,7 @@ func (c *bookController) Save(ctx *gin.Context) {
 func (c *bookController) GetByIsbn(ctx *gin.Context) {
 	isbn := ctx.Param("isbn")
 	if !c.service.BookExists(isbn) {
-		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: NotFoundError})
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
 	} else {
 		ctx.JSON(200, c.service.FindByIsbn(isbn))
 	}

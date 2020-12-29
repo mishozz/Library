@@ -5,6 +5,7 @@ import (
 
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
+	"github.com/stretchr/stew/slice"
 )
 
 type UserService interface {
@@ -12,6 +13,8 @@ type UserService interface {
 	FindAll() []entities.User
 	UserExists(email string) bool
 	TakeBook(user entities.User, book entities.Book)
+	ReturnBook(user entities.User, book entities.Book)
+	IsBookTakenByUser(email string, isbn string) bool
 }
 
 type userService struct {
@@ -45,4 +48,53 @@ func (s *userService) TakeBook(user entities.User, book entities.Book) {
 
 	s.bookRepository.UpdateUnits(book)
 	s.userRepository.UpdateTakenBooks(user, user.TakenBooks)
+
+	if contains(user.ReturnedBooks, book) {
+		user.ReturnedBooks = remove(user.ReturnedBooks, book)
+		s.userRepository.UpdateReturnedBooks(user, user.ReturnedBooks)
+	}
+}
+
+func (s *userService) ReturnBook(user entities.User, book entities.Book) {
+	book.AvailableUnits = book.AvailableUnits + 1
+	user.ReturnedBooks = append(user.ReturnedBooks, book)
+	user.TakenBooks = remove(user.TakenBooks, book)
+
+	s.bookRepository.UpdateUnits(book)
+	s.userRepository.UpdateReturnedBooks(user, user.ReturnedBooks)
+	s.userRepository.UpdateTakenBooks(user, user.TakenBooks)
+}
+
+func (s *userService) IsBookTakenByUser(email string, isbn string) bool {
+	book := s.bookRepository.Find(isbn)
+	if reflect.ValueOf(book).IsZero() {
+		return false
+	}
+
+	user := s.userRepository.FindByEmail(email)
+	if reflect.ValueOf(user).IsZero() {
+		return false
+	}
+
+	return slice.Contains(user.TakenBooks, book)
+}
+
+func remove(slice []entities.Book, book entities.Book) []entities.Book {
+	var s int
+	for index, x := range slice {
+		if x.Isbn == book.Isbn {
+			s = index
+			break
+		}
+	}
+	return append(slice[:s], slice[s+1:]...)
+}
+
+func contains(slice []entities.Book, book entities.Book) bool {
+	for _, x := range slice {
+		if x.Isbn == book.Isbn {
+			return true
+		}
+	}
+	return false
 }

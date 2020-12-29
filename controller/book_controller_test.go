@@ -114,7 +114,7 @@ func Test_BookController_Save(t *testing.T) {
 		},
 		input:      validBook,
 		statusCode: http.StatusCreated,
-		respBody:   gin.H{"message": SAVE_SUCCESS},
+		respBody:   gin.H{MESSAGE: SAVE_SUCCESS},
 	}, {
 		name: "invalid book",
 		mockBookService: func(m *mockBookService) *mockBookService {

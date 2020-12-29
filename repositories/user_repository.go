@@ -43,9 +43,11 @@ func (r *userRepository) FindAll() []entities.User {
 }
 
 func (r *userRepository) UpdateTakenBooks(user entities.User, takenBooks []entities.Book) {
+	r.connection.Model(&user).Association("TakenBooks").Clear()
 	r.connection.Model(&user).Association("TakenBooks").Append(takenBooks)
 }
 
 func (r *userRepository) UpdateReturnedBooks(user entities.User, returnedBooks []entities.Book) {
+	r.connection.Model(&user).Association("ReturnedBooks").Clear()
 	r.connection.Model(&user).Association("ReturnedBooks").Append(returnedBooks)
 }

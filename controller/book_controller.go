@@ -63,7 +63,7 @@ func (c *bookController) Save(ctx *gin.Context) {
 		ctx.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: BOOK_CONFLICT})
 	} else {
 		c.service.Save(book)
-		ctx.JSON(http.StatusCreated, gin.H{"message": SAVE_SUCCESS})
+		ctx.JSON(http.StatusCreated, gin.H{MESSAGE: SAVE_SUCCESS})
 	}
 }
 

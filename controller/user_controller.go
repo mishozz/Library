@@ -12,6 +12,8 @@ const (
 	USER_NOT_FOUND     = "User not found"
 	NO_AVAILABLE_UNITS = "This book has not available copies"
 	BOOK_ALREADY_TAKEN = "This book is already taken"
+	BOOK_IS_NOT_TAKEN  = "This book is not taken"
+	MESSAGE            = "message"
 )
 
 func HandleUserRequests(server *gin.Engine, userController UserController) {
@@ -26,11 +28,15 @@ func HandleUserRequests(server *gin.Engine, userController UserController) {
 		apiRoutes.POST("users/:email/:isbn", func(ctx *gin.Context) {
 			userController.TakeBook(ctx)
 		})
+		apiRoutes.DELETE("users/:email/:isbn", func(ctx *gin.Context) {
+			userController.ReturnBook(ctx)
+		})
 	}
 }
 
 type UserController interface {
 	TakeBook(ctx *gin.Context)
+	ReturnBook(ctx *gin.Context)
 	GetAll(ctx *gin.Context)
 	GetByEmail(ctx *gin.Context)
 }
@@ -78,7 +84,22 @@ func (c *userController) TakeBook(ctx *gin.Context) {
 			ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN})
 		} else {
 			c.userService.TakeBook(user, book)
-			ctx.JSON(http.StatusCreated, gin.H{"message": "Book successfully taken"})
+			ctx.JSON(http.StatusCreated, gin.H{MESSAGE: "Book successfully taken"})
 		}
+	}
+}
+
+func (c *userController) ReturnBook(ctx *gin.Context) {
+	isbn := ctx.Param("isbn")
+	email := ctx.Param("email")
+
+	if !c.userService.IsBookTakenByUser(email, isbn) {
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_IS_NOT_TAKEN})
+	} else {
+		book := c.bookService.FindByIsbn(isbn)
+		user := c.userService.FindByEmail(email)
+
+		c.userService.ReturnBook(user, book)
+		ctx.JSON(http.StatusNoContent, gin.H{MESSAGE: "Book successfuly returned"})
 	}
 }

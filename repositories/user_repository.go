@@ -31,19 +31,21 @@ func (r *userRepository) Save(user entities.User) {
 func (r *userRepository) FindByEmail(email string) entities.User {
 	var user entities.User
 	r.connection.Where("Email = ?", email).First(&user)
+	r.connection.Model(&user).Association("TakenBooks").Find(&user.TakenBooks)
+	r.connection.Model(&user).Association("ReturnedBooks").Find(&user.ReturnedBooks)
 	return user
 }
 
 func (r *userRepository) FindAll() []entities.User {
 	var users []entities.User
-	r.connection.Set("gorm:auto_preload", true).Find(&users)
+	r.connection.Preload("TakenBooks").Preload("ReturnedBooks").Find(&users)
 	return users
 }
 
 func (r *userRepository) UpdateTakenBooks(user entities.User, takenBooks []entities.Book) {
-	r.connection.Model(&user).Update("TakenBooks", takenBooks)
+	r.connection.Model(&user).Association("TakenBooks").Append(takenBooks)
 }
 
 func (r *userRepository) UpdateReturnedBooks(user entities.User, returnedBooks []entities.Book) {
-	r.connection.Model(&user).Update("ReturnedBooks", returnedBooks)
+	r.connection.Model(&user).Association("ReturnedBooks").Append(returnedBooks)
 }

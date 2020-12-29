@@ -20,6 +20,9 @@ func HandleUserRequests(server *gin.Engine, userController UserController) {
 		apiRoutes.GET("users", func(ctx *gin.Context) {
 			userController.GetAll(ctx)
 		})
+		apiRoutes.GET("users/:email", func(ctx *gin.Context) {
+			userController.GetByEmail(ctx)
+		})
 		apiRoutes.POST("users/:email/:isbn", func(ctx *gin.Context) {
 			userController.TakeBook(ctx)
 		})
@@ -29,6 +32,7 @@ func HandleUserRequests(server *gin.Engine, userController UserController) {
 type UserController interface {
 	TakeBook(ctx *gin.Context)
 	GetAll(ctx *gin.Context)
+	GetByEmail(ctx *gin.Context)
 }
 
 type userController struct {
@@ -45,6 +49,15 @@ func NewUserController(userService service.UserService, bookService service.Book
 
 func (c *userController) GetAll(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, c.userService.FindAll())
+}
+
+func (c *userController) GetByEmail(ctx *gin.Context) {
+	email := ctx.Param("email")
+	if !c.userService.UserExists(email) {
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: USER_NOT_FOUND})
+	} else {
+		ctx.JSON(http.StatusOK, c.userService.FindByEmail(email))
+	}
 }
 
 func (c *userController) TakeBook(ctx *gin.Context) {

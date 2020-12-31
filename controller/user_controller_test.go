@@ -149,9 +149,13 @@ func Test_UserController_TakeBook(t *testing.T) {
 		Title:          "test",
 		AvailableUnits: 3,
 	}
-	user := entities.User{
-		Email: "email",
+	invalidBook := entities.Book{
+		Isbn:           "test",
+		Author:         "test",
+		Title:          "test",
+		AvailableUnits: 0,
 	}
+
 	tests := []struct {
 		name            string
 		mockBookService func(m *mockBookService) *mockBookService
@@ -167,12 +171,72 @@ func Test_UserController_TakeBook(t *testing.T) {
 		},
 		mockUserService: func(m *mockUserService) *mockUserService {
 			m.On("UserExists", "email").Return(true)
-			m.On("FindByEmail", "email").Return(user)
-			m.On("TakeBook", user, book)
+			m.On("FindByEmail", "email").Return(entities.User{
+				Email: "email",
+			})
+			m.On("TakeBook", entities.User{
+				Email: "email",
+			}, book)
 			return m
 		},
 		respBody:   gin.H{MESSAGE: "Book successfully taken"},
 		respStatus: 201,
+	}, {
+		name: "no available units",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(invalidBook)
+			m.On("BookExists", "test").Return(true)
+			return m
+		},
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("UserExists", "email").Return(true)
+			m.On("FindByEmail", "email").Return(entities.User{
+				Email: "email",
+			})
+			return m
+		},
+		respBody:   gin.H{ERROR_MESSAGE: NO_AVAILABLE_UNITS},
+		respStatus: 400,
+	}, {
+		name: "book is already taken by this user",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(book)
+			m.On("BookExists", "test").Return(true)
+			return m
+		},
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("UserExists", "email").Return(true)
+			m.On("FindByEmail", "email").Return(entities.User{
+				Email:      "email",
+				TakenBooks: []entities.Book{book},
+			})
+			return m
+		},
+		respBody:   gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN},
+		respStatus: 400,
+	}, {
+		name: "user doesnt exists",
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("UserExists", "email").Return(false)
+			return m
+		},
+		mockBookService: func(m *mockBookService) *mockBookService {
+			return m
+		},
+		respBody:   gin.H{ERROR_MESSAGE: USER_NOT_FOUND},
+		respStatus: 404,
+	}, {
+		name: "book doesnt exists",
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("UserExists", "email").Return(true)
+			return m
+		},
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("BookExists", "test").Return(false)
+			return m
+		},
+		respBody:   gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND},
+		respStatus: 404,
 	}}
 	for _, tt := range tests {
 		tt := tt

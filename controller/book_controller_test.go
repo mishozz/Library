@@ -84,6 +84,8 @@ func Test_BookController_GetAll(t *testing.T) {
 	}
 	assert.Equal(t, expectedBooks, books)
 	assert.Equal(t, http.StatusOK, w.Code)
+
+	mock.AssertExpectations(t)
 }
 
 func Test_BookController_Save(t *testing.T) {

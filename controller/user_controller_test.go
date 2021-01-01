@@ -264,3 +264,66 @@ func Test_UserController_TakeBook(t *testing.T) {
 		})
 	}
 }
+
+func Test_UserController_ReturnBook(t *testing.T) {
+	book := entities.Book{
+		Isbn:           "test",
+		Author:         "test",
+		Title:          "test",
+		AvailableUnits: 3,
+	}
+	tests := []struct {
+		name            string
+		mockBookService func(m *mockBookService) *mockBookService
+		mockUserService func(m *mockUserService) *mockUserService
+		respBody        gin.H
+		respStatus      int
+	}{{
+		name: "success",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(book)
+			return m
+		},
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("IsBookTakenByUser", "email", "test").Return(true)
+			m.On("FindByEmail", "email").Return(entities.User{
+				Email:      "email",
+				TakenBooks: []entities.Book{book},
+			})
+			m.On("ReturnBook", entities.User{
+				Email:      "email",
+				TakenBooks: []entities.Book{book},
+			}, book)
+			return m
+		},
+		respStatus: 204,
+	}, {
+		name: "book is not taken",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			return m
+		},
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("IsBookTakenByUser", "email", "test").Return(false)
+			return m
+		},
+		respStatus: 404,
+	}}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mockBook := &mockBookService{}
+			mockUser := &mockUserService{}
+
+			userController := NewUserController(tt.mockUserService(mockUser), tt.mockBookService(mockBook))
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Params = append(c.Params, gin.Param{Key: "email", Value: "email"}, gin.Param{Key: "isbn", Value: "test"})
+			userController.ReturnBook(c)
+
+			assert.Equal(t, tt.respStatus, w.Code)
+			mockBook.AssertExpectations(t)
+			mockUser.AssertExpectations(t)
+		})
+	}
+}

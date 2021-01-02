@@ -42,6 +42,16 @@ func (m *mockBookService) BookExists(isbn string) bool {
 	return args.Get(0).(bool)
 }
 
+func (m *mockBookService) Delete(isbn string) error {
+	args := m.Called(isbn)
+	return args.Get(0).(error)
+}
+
+func (m *mockBookService) IsBookTaken(isbn string) bool {
+	args := m.Called(isbn)
+	return args.Get(0).(bool)
+}
+
 func Test_NewBookController(t *testing.T) {
 	service := &mockBookService{}
 	bookController := NewBookController(service)

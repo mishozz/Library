@@ -12,6 +12,8 @@ type BookService interface {
 	FindAll() []entities.Book
 	FindByIsbn(isbn string) entities.Book
 	BookExists(isbn string) bool
+	Delete(isbn string) error
+	IsBookTaken(isbn string) bool
 }
 
 type bookService struct {
@@ -39,4 +41,12 @@ func (s *bookService) FindByIsbn(isbn string) entities.Book {
 func (s *bookService) BookExists(isbn string) bool {
 	book := s.repository.Find(isbn)
 	return !reflect.ValueOf(book).IsZero()
+}
+
+func (s *bookService) Delete(isbn string) error {
+	return s.repository.Delete(isbn)
+}
+
+func (s *bookService) IsBookTaken(isbn string) bool {
+	return s.repository.IsBookTaken(isbn)
 }

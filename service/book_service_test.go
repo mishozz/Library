@@ -14,7 +14,15 @@ type mockBookRepository struct {
 
 func (m *mockBookRepository) Save(entities.Book) {}
 
-func (m *mockBookRepository) Delete(book entities.Book) {}
+func (m *mockBookRepository) Delete(isbn string) error {
+	args := m.Called(isbn)
+	return args.Get(0).(error)
+}
+
+func (m *mockBookRepository) IsBookTaken(isbn string) bool {
+	args := m.Called(isbn)
+	return args.Get(0).(bool)
+}
 
 func (m *mockBookRepository) FindAll() []entities.Book {
 	args := m.Called()

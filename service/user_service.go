@@ -5,7 +5,6 @@ import (
 
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
-	"github.com/stretchr/stew/slice"
 )
 
 type UserService interface {
@@ -76,7 +75,7 @@ func (s *userService) IsBookTakenByUser(email string, isbn string) bool {
 		return false
 	}
 
-	return slice.Contains(user.TakenBooks, book)
+	return contains(user.TakenBooks, book)
 }
 
 func remove(slice []entities.Book, book entities.Book) []entities.Book {

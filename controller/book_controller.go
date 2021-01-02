@@ -28,6 +28,10 @@ func HandleBookRequests(server *gin.Engine, bookController BookController) {
 			bookController.GetByIsbn(ctx)
 		})
 
+		apiRoutes.DELETE("/books/:isbn", func(ctx *gin.Context) {
+			bookController.Delete(ctx)
+		})
+
 		apiRoutes.POST("/books", func(ctx *gin.Context) {
 			bookController.Save(ctx)
 		})
@@ -38,6 +42,7 @@ type BookController interface {
 	GetAll(ctx *gin.Context)
 	GetByIsbn(ctx *gin.Context)
 	Save(ctx *gin.Context)
+	Delete(ctx *gin.Context)
 }
 
 type bookController struct {
@@ -73,5 +78,21 @@ func (c *bookController) GetByIsbn(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
 	} else {
 		ctx.JSON(200, c.service.FindByIsbn(isbn))
+	}
+}
+
+func (c *bookController) Delete(ctx *gin.Context) {
+	isbn := ctx.Param("isbn")
+	if !c.service.BookExists(isbn) {
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
+	} else if c.service.IsBookTaken(isbn) {
+		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN})
+	} else {
+		err := c.service.Delete(isbn)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{ERROR_MESSAGE: "error while deleting"})
+		} else {
+			ctx.JSON(204, gin.H{MESSAGE: "book deleted"})
+		}
 	}
 }

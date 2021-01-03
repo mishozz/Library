@@ -16,7 +16,7 @@ func NewDatabaseConfig() Database {
 	if err != nil {
 		errors.Wrap(err, "unable to open db connection")
 	}
-	db.AutoMigrate(&entities.Book{}, &entities.User{})
+	db.AutoMigrate(&entities.Book{}, &entities.User{}, &entities.Auth{})
 
 	return Database{
 		Connection: db,

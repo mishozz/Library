@@ -18,10 +18,14 @@ var (
 	db                                         = config.NewDatabaseConfig()
 	bookRepository repositories.BookRepository = repositories.NewBookRepository(db)
 	userRepository repositories.UserRepository = repositories.NewUserRepository(db)
-	bookService    service.BookService         = service.NewBookService(bookRepository)
-	userService    service.UserService         = service.NewUserService(userRepository, bookRepository)
-	bookController controller.BookController   = controller.NewBookController(bookService)
-	userController controller.UserController   = controller.NewUserController(userService, bookService)
+	authRepository repositories.AuthRepository = repositories.NewAuthRepository(db)
+
+	bookService service.BookService = service.NewBookService(bookRepository)
+	userService service.UserService = service.NewUserService(userRepository, bookRepository)
+
+	bookController  controller.BookController  = controller.NewBookController(bookService, authRepository)
+	userController  controller.UserController  = controller.NewUserController(userService, bookService)
+	loginController controller.LoginController = controller.NewLoginController(authRepository, userService)
 )
 
 func main() {
@@ -35,7 +39,7 @@ func main() {
 	server := gin.New()
 
 	controller.HandleBookRequests(server, bookController)
-	controller.HandleUserRequests(server, userController)
+	controller.HandleUserRequests(server, userController, loginController)
 
 	server.Run(":" + PORT)
 }

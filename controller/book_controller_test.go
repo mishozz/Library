@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mishozz/Library/auth"
 	"github.com/mishozz/Library/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -52,9 +53,24 @@ func (m *mockBookService) IsBookTaken(isbn string) bool {
 	return args.Get(0).(bool)
 }
 
+type mockAuthRepo struct {
+	mock.Mock
+}
+
+func (m *mockAuthRepo) FetchAuth(*auth.AuthDetails) (auth *entities.Auth, err error) {
+	return
+}
+func (m *mockAuthRepo) DeleteAuth(*auth.AuthDetails) error {
+	return nil
+}
+func (m *mockAuthRepo) CreateAuth(uint64) (auth *entities.Auth, err error) {
+	return
+}
+
 func Test_NewBookController(t *testing.T) {
 	service := &mockBookService{}
-	bookController := NewBookController(service)
+	authRepo := &mockAuthRepo{}
+	bookController := NewBookController(service, authRepo)
 	assert.NotNil(t, bookController.service)
 }
 
@@ -67,6 +83,7 @@ func Test_BookController_GetAll(t *testing.T) {
 			AvailableUnits: 1,
 		},
 	}
+	authRepo := &mockAuthRepo{}
 
 	mockService := func(m *mockBookService) *mockBookService {
 		m.On("FindAll").Return([]entities.Book{
@@ -81,7 +98,7 @@ func Test_BookController_GetAll(t *testing.T) {
 	}
 
 	mock := &mockBookService{}
-	controller := NewBookController(mockService(mock))
+	controller := NewBookController(mockService(mock), authRepo)
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -99,6 +116,7 @@ func Test_BookController_GetAll(t *testing.T) {
 }
 
 func Test_BookController_Save(t *testing.T) {
+	authRepo := &mockAuthRepo{}
 	validBook := entities.Book{
 		Isbn:           "test",
 		Author:         "test",
@@ -149,7 +167,7 @@ func Test_BookController_Save(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockBookService{}
-			controller := NewBookController(tt.mockBookService(mock))
+			controller := NewBookController(tt.mockBookService(mock), authRepo)
 
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
@@ -180,6 +198,7 @@ func Test_BookController_Save(t *testing.T) {
 }
 
 func Test_BookController_GetByIsbn(t *testing.T) {
+	authRepo := &mockAuthRepo{}
 	validBook := entities.Book{
 		Isbn:           "test",
 		Author:         "test",
@@ -216,7 +235,7 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockBookService{}
-			controller := NewBookController(tt.mockBookService(mock))
+			controller := NewBookController(tt.mockBookService(mock), authRepo)
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)

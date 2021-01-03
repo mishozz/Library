@@ -16,9 +16,17 @@ const (
 	MESSAGE            = "message"
 )
 
-func HandleUserRequests(server *gin.Engine, userController UserController) {
+func HandleUserRequests(server *gin.Engine, userController UserController, loginController LoginController) {
 	apiRoutes := server.Group(LIBRARY_API_V1)
 	{
+		apiRoutes.POST("login", func(c *gin.Context) {
+			loginController.Login(c)
+		})
+
+		apiRoutes.POST("logout", func(c *gin.Context) {
+			loginController.Login(c)
+		})
+
 		apiRoutes.GET("users", func(ctx *gin.Context) {
 			userController.GetAll(ctx)
 		})

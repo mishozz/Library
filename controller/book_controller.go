@@ -4,7 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mishozz/Library/auth"
 	"github.com/mishozz/Library/entities"
+	"github.com/mishozz/Library/middleware"
+	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/service"
 )
 
@@ -20,7 +23,7 @@ const (
 func HandleBookRequests(server *gin.Engine, bookController BookController) {
 	apiRoutes := server.Group(LIBRARY_API_V1)
 	{
-		apiRoutes.GET("/books", func(ctx *gin.Context) {
+		apiRoutes.GET("/books", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
 			bookController.GetAll(ctx)
 		})
 
@@ -46,16 +49,28 @@ type BookController interface {
 }
 
 type bookController struct {
-	service service.BookService
+	service        service.BookService
+	authRepository repositories.AuthRepository
 }
 
-func NewBookController(service service.BookService) *bookController {
+func NewBookController(service service.BookService, authRepository repositories.AuthRepository) *bookController {
 	return &bookController{
-		service: service,
+		service:        service,
+		authRepository: authRepository,
 	}
 }
 
 func (c *bookController) GetAll(ctx *gin.Context) {
+	tokenAuth, err := auth.ExtractTokenAuth(ctx.Request)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	_, err = c.authRepository.FetchAuth(tokenAuth)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, "unauthorized")
+		return
+	}
 	ctx.JSON(200, c.service.FindAll())
 }
 
@@ -63,7 +78,7 @@ func (c *bookController) Save(ctx *gin.Context) {
 	var book entities.Book
 	err := ctx.ShouldBindJSON(&book)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
 	} else if c.service.BookExists(book.Isbn) {
 		ctx.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: BOOK_CONFLICT})
 	} else {

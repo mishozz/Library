@@ -63,7 +63,7 @@ func (m *mockAuthRepo) FetchAuth(*auth.AuthDetails) (auth *entities.Auth, err er
 func (m *mockAuthRepo) DeleteAuth(*auth.AuthDetails) error {
 	return nil
 }
-func (m *mockAuthRepo) CreateAuth(uint64) (auth *entities.Auth, err error) {
+func (m *mockAuthRepo) CreateAuth(uint64, string) (auth *entities.Auth, err error) {
 	return
 }
 

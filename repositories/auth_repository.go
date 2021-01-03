@@ -11,7 +11,7 @@ import (
 type AuthRepository interface {
 	FetchAuth(*auth.AuthDetails) (*entities.Auth, error)
 	DeleteAuth(*auth.AuthDetails) error
-	CreateAuth(uint64) (*entities.Auth, error)
+	CreateAuth(uint64, string) (*entities.Auth, error)
 }
 
 type authRepository struct {
@@ -44,9 +44,10 @@ func (s *authRepository) DeleteAuth(authD *auth.AuthDetails) error {
 }
 
 //Once the user signup/login, create a row in the auth table, with a new uuid
-func (s *authRepository) CreateAuth(userId uint64) (*entities.Auth, error) {
+func (s *authRepository) CreateAuth(userId uint64, userRole string) (*entities.Auth, error) {
 	au := &entities.Auth{}
 	au.AuthUUID = uuid.NewV4().String() //generate a new UUID each time
+	au.Role = userRole
 	au.UserID = userId
 	err := s.connection.Debug().Create(&au).Error
 	if err != nil {

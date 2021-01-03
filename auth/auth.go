@@ -14,6 +14,7 @@ import (
 type AuthDetails struct {
 	AuthUuid string
 	UserId   uint64
+	Role     string
 }
 
 func CreateToken(authD AuthDetails) (string, error) {
@@ -21,6 +22,7 @@ func CreateToken(authD AuthDetails) (string, error) {
 	claims["authorized"] = true
 	claims["auth_uuid"] = authD.AuthUuid
 	claims["user_id"] = authD.UserId
+	claims["user_role"] = authD.Role
 	claims["exp"] = time.Now().Add(time.Minute * 15).Unix()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(os.Getenv("API_SECRET")))
@@ -79,11 +81,16 @@ func ExtractTokenAuth(r *http.Request) (*AuthDetails, error) {
 		if !ok {
 			return nil, err
 		}
+		role, ok := claims["user_role"].(string) //convert the interface to string
+		if !ok {
+			return nil, err
+		}
 		userId, err := strconv.ParseUint(fmt.Sprintf("%.f", claims["user_id"]), 10, 64)
 		if err != nil {
 			return nil, err
 		}
 		return &AuthDetails{
+			Role:     role,
 			AuthUuid: authUuid,
 			UserId:   userId,
 		}, nil

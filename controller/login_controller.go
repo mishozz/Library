@@ -42,7 +42,7 @@ func (lc *loginController) Login(c *gin.Context) {
 	// 	return
 	// }
 	//since after the user logged out, we destroyed that record in the database so that same jwt token can't be used twice. We need to create the token again
-	authData, err := lc.authRepository.CreateAuth(uint64(user.ID))
+	authData, err := lc.authRepository.CreateAuth(uint64(user.ID), user.Role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -50,6 +50,7 @@ func (lc *loginController) Login(c *gin.Context) {
 	var authD auth.AuthDetails
 	authD.UserId = authData.UserID
 	authD.AuthUuid = authData.AuthUUID
+	authD.Role = authData.Role
 
 	token, loginErr := service.Authorize.SignIn(authD)
 	if loginErr != nil {

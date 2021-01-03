@@ -33,6 +33,7 @@ func main() {
 
 	user := entities.User{
 		Email: "email@gmail.com",
+		Role:  "Admin",
 	}
 	db.Connection.Create(&user)
 

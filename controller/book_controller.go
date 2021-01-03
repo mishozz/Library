@@ -7,6 +7,7 @@ import (
 	"github.com/mishozz/Library/auth"
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/middleware"
+
 	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/service"
 )
@@ -18,6 +19,9 @@ const (
 	ERROR_MESSAGE   = "error message"
 	BOOK_CONFLICT   = "Every book must have a unique ISBN!"
 	BOOK_NOT_FOUND  = "Book not found"
+
+	ADMIN = "Admin"
+	USER  = "User"
 )
 
 func HandleBookRequests(server *gin.Engine, bookController BookController) {
@@ -27,15 +31,15 @@ func HandleBookRequests(server *gin.Engine, bookController BookController) {
 			bookController.GetAll(ctx)
 		})
 
-		apiRoutes.GET("/books/:isbn", func(ctx *gin.Context) {
+		apiRoutes.GET("/books/:isbn", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
 			bookController.GetByIsbn(ctx)
 		})
 
-		apiRoutes.DELETE("/books/:isbn", func(ctx *gin.Context) {
+		apiRoutes.DELETE("/books/:isbn", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
 			bookController.Delete(ctx)
 		})
 
-		apiRoutes.POST("/books", func(ctx *gin.Context) {
+		apiRoutes.POST("/books", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
 			bookController.Save(ctx)
 		})
 	}

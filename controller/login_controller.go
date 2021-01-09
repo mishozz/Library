@@ -54,7 +54,7 @@ func (lc *loginController) Login(c *gin.Context) {
 
 	token, loginErr := service.Authorize.SignIn(authD)
 	if loginErr != nil {
-		c.JSON(http.StatusForbidden, "Please try to login later")
+		c.JSON(http.StatusForbidden, gin.H{ERROR_MESSAGE: "Please try to login later"})
 		return
 	}
 	c.JSON(http.StatusOK, token)
@@ -63,14 +63,14 @@ func (lc *loginController) Login(c *gin.Context) {
 func (lc *loginController) LogOut(c *gin.Context) {
 	au, err := auth.ExtractTokenAuth(c.Request)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, "unauthorized")
+		c.JSON(http.StatusUnauthorized, gin.H{ERROR_MESSAGE: "unauthorized"})
 		return
 	}
 	delErr := lc.authRepository.DeleteAuth(au)
 	if delErr != nil {
 		log.Println(delErr)
-		c.JSON(http.StatusUnauthorized, "unauthorized")
+		c.JSON(http.StatusUnauthorized, gin.H{ERROR_MESSAGE: "unauthorized"})
 		return
 	}
-	c.JSON(http.StatusOK, "Successfully logged out")
+	c.JSON(http.StatusOK, gin.H{MESSAGE: "Successfully logged out"})
 }

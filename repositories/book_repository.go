@@ -7,11 +7,11 @@ import (
 )
 
 type BookRepository interface {
-	Save(book entities.Book)
+	Save(book entities.Book) error
 	Delete(isbn string) error
-	FindAll() []entities.Book
-	Find(isbn string) entities.Book
-	UpdateUnits(book entities.Book)
+	FindAll() ([]entities.Book, error)
+	Find(isbn string) (entities.Book, error)
+	UpdateUnits(book entities.Book) error
 	IsBookTaken(isbn string) bool
 }
 
@@ -25,8 +25,12 @@ func NewBookRepository(db config.Database) *BookRepositoryImpl {
 	}
 }
 
-func (b *BookRepositoryImpl) Save(book entities.Book) {
-	b.connection.Create(&book)
+func (b *BookRepositoryImpl) Save(book entities.Book) error {
+	err := b.connection.Create(&book).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (b *BookRepositoryImpl) Delete(isbn string) error {
@@ -56,17 +60,27 @@ func (b *BookRepositoryImpl) IsBookTaken(isbn string) bool {
 	return false
 }
 
-func (b *BookRepositoryImpl) FindAll() []entities.Book {
+func (b *BookRepositoryImpl) FindAll() ([]entities.Book, error) {
 	var books []entities.Book
-	b.connection.Set("gorm:auto_preload", true).Find(&books)
-	return books
+	err := b.connection.Set("gorm:auto_preload", true).Find(&books).Error
+	if err != nil {
+		return nil, err
+	}
+	return books, nil
 }
 
-func (b *BookRepositoryImpl) Find(isbn string) entities.Book {
+func (b *BookRepositoryImpl) Find(isbn string) (entities.Book, error) {
 	var book entities.Book
-	b.connection.Where("Isbn = ?", isbn).First(&book)
-	return book
+	err := b.connection.Where("Isbn = ?", isbn).First(&book).Error
+	if err != nil {
+		return book, err
+	}
+	return book, nil
 }
-func (b *BookRepositoryImpl) UpdateUnits(book entities.Book) {
-	b.connection.Model(&book).Update("available_units", book.AvailableUnits)
+func (b *BookRepositoryImpl) UpdateUnits(book entities.Book) error {
+	err := b.connection.Model(&book).Update("available_units", book.AvailableUnits).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }

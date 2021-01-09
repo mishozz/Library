@@ -3,12 +3,12 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mishozz/Library/auth"
 	"github.com/mishozz/Library/entities"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,28 +24,24 @@ type mockBookService struct {
 	mock.Mock
 }
 
-func (m *mockBookService) Save(book entities.Book) {
-	m.Called(book)
+func (m *mockBookService) Save(book entities.Book) error {
+	args := m.Called(book)
+	return args.Error(0)
 }
 
-func (m *mockBookService) FindAll() []entities.Book {
+func (m *mockBookService) FindAll() ([]entities.Book, error) {
 	args := m.Called()
-	return args.Get(0).([]entities.Book)
+	return args.Get(0).([]entities.Book), args.Error(1)
 }
 
-func (m *mockBookService) FindByIsbn(isbn string) entities.Book {
+func (m *mockBookService) FindByIsbn(isbn string) (entities.Book, error) {
 	args := m.Called(isbn)
-	return args.Get(0).(entities.Book)
-}
-
-func (m *mockBookService) BookExists(isbn string) bool {
-	args := m.Called(isbn)
-	return args.Get(0).(bool)
+	return args.Get(0).(entities.Book), args.Error(1)
 }
 
 func (m *mockBookService) Delete(isbn string) error {
 	args := m.Called(isbn)
-	return args.Get(0).(error)
+	return args.Error(0)
 }
 
 func (m *mockBookService) IsBookTaken(isbn string) bool {
@@ -53,24 +49,9 @@ func (m *mockBookService) IsBookTaken(isbn string) bool {
 	return args.Get(0).(bool)
 }
 
-type mockAuthRepo struct {
-	mock.Mock
-}
-
-func (m *mockAuthRepo) FetchAuth(*auth.AuthDetails) (auth *entities.Auth, err error) {
-	return
-}
-func (m *mockAuthRepo) DeleteAuth(*auth.AuthDetails) error {
-	return nil
-}
-func (m *mockAuthRepo) CreateAuth(uint64, string) (auth *entities.Auth, err error) {
-	return
-}
-
 func Test_NewBookController(t *testing.T) {
 	service := &mockBookService{}
-	authRepo := &mockAuthRepo{}
-	bookController := NewBookController(service, authRepo)
+	bookController := NewBookController(service)
 	assert.NotNil(t, bookController.service)
 }
 
@@ -83,7 +64,6 @@ func Test_BookController_GetAll(t *testing.T) {
 			AvailableUnits: 1,
 		},
 	}
-	authRepo := &mockAuthRepo{}
 
 	mockService := func(m *mockBookService) *mockBookService {
 		m.On("FindAll").Return([]entities.Book{
@@ -93,12 +73,12 @@ func Test_BookController_GetAll(t *testing.T) {
 				Title:          "test",
 				AvailableUnits: 1,
 			},
-		})
+		}, nil)
 		return m
 	}
 
 	mock := &mockBookService{}
-	controller := NewBookController(mockService(mock), authRepo)
+	controller := NewBookController(mockService(mock))
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -116,7 +96,6 @@ func Test_BookController_GetAll(t *testing.T) {
 }
 
 func Test_BookController_Save(t *testing.T) {
-	authRepo := &mockAuthRepo{}
 	validBook := entities.Book{
 		Isbn:           "test",
 		Author:         "test",
@@ -138,8 +117,7 @@ func Test_BookController_Save(t *testing.T) {
 	}{{
 		name: "success",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("BookExists", "test").Return(false)
-			m.On("Save", validBook)
+			m.On("Save", validBook).Return(nil)
 			return m
 		},
 		input:      validBook,
@@ -151,12 +129,12 @@ func Test_BookController_Save(t *testing.T) {
 			return m
 		},
 		input:      invalidBook,
-		statusCode: http.StatusBadRequest,
+		statusCode: http.StatusUnprocessableEntity,
 		respBody:   gin.H{ERROR_MESSAGE: INVALID_REQUEST},
 	}, {
 		name: "book already exists",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("BookExists", "test").Return(true)
+			m.On("Save", validBook).Return(errors.New("book exists"))
 			return m
 		},
 		input:      validBook,
@@ -167,7 +145,7 @@ func Test_BookController_Save(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockBookService{}
-			controller := NewBookController(tt.mockBookService(mock), authRepo)
+			controller := NewBookController(tt.mockBookService(mock))
 
 			w := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(w)
@@ -198,7 +176,6 @@ func Test_BookController_Save(t *testing.T) {
 }
 
 func Test_BookController_GetByIsbn(t *testing.T) {
-	authRepo := &mockAuthRepo{}
 	validBook := entities.Book{
 		Isbn:           "test",
 		Author:         "test",
@@ -214,8 +191,7 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 	}{{
 		name: "success",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("BookExists", "test").Return(true)
-			m.On("FindByIsbn", "test").Return(validBook)
+			m.On("FindByIsbn", "test").Return(validBook, nil)
 			return m
 		},
 		isbn:       "test",
@@ -224,7 +200,7 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 	}, {
 		name: "invalid book",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("BookExists", "test").Return(false)
+			m.On("FindByIsbn", "test").Return(entities.Book{}, errors.New("Not found"))
 			return m
 		},
 		isbn:       "test",
@@ -235,7 +211,7 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			mock := &mockBookService{}
-			controller := NewBookController(tt.mockBookService(mock), authRepo)
+			controller := NewBookController(tt.mockBookService(mock))
 
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -249,6 +225,62 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 			}
 
 			assert.Equal(t, tt.respBody, actualBody)
+			assert.Equal(t, tt.statusCode, w.Code)
+			mock.AssertExpectations(t)
+		})
+	}
+}
+
+func Test_BookController_Delete(t *testing.T) {
+	tests := []struct {
+		name            string
+		mockBookService func(m *mockBookService) *mockBookService
+		statusCode      int
+	}{{
+		name: "success",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(entities.Book{}, nil)
+			m.On("IsBookTaken", "test").Return(false)
+			m.On("Delete", "test").Return(nil)
+			return m
+		},
+		statusCode: 204,
+	}, {
+		name: "book not found",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(entities.Book{}, errors.New("not found"))
+			return m
+		},
+		statusCode: 404,
+	}, {
+		name: "book is still take",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(entities.Book{}, nil)
+			m.On("IsBookTaken", "test").Return(true)
+			return m
+		},
+		statusCode: 400,
+	}, {
+		name: "error while deleting",
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(entities.Book{}, nil)
+			m.On("IsBookTaken", "test").Return(false)
+			m.On("Delete", "test").Return(errors.New("internal error"))
+			return m
+		},
+		statusCode: 500,
+	}}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mock := &mockBookService{}
+			controller := NewBookController(tt.mockBookService(mock))
+
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
+			c.Params = append(c.Params, gin.Param{Key: "isbn", Value: "test"})
+			controller.Delete(c)
+
 			assert.Equal(t, tt.statusCode, w.Code)
 			mock.AssertExpectations(t)
 		})

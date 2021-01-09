@@ -23,7 +23,7 @@ var (
 	bookService service.BookService = service.NewBookService(bookRepository)
 	userService service.UserService = service.NewUserService(userRepository, bookRepository)
 
-	bookController  controller.BookController  = controller.NewBookController(bookService, authRepository)
+	bookController  controller.BookController  = controller.NewBookController(bookService)
 	userController  controller.UserController  = controller.NewUserController(userService, bookService)
 	loginController controller.LoginController = controller.NewLoginController(authRepository, userService)
 )

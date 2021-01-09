@@ -62,7 +62,7 @@ func Test_BookRepository_Save_Find(t *testing.T) {
 
 	bookRepo.Save(book)
 
-	found := bookRepo.Find(book.Isbn)
+	found, _ := bookRepo.Find(book.Isbn)
 
 	assertEqualBooks(t, book, found)
 }
@@ -88,7 +88,7 @@ func Test_BookRepository_FindAll(t *testing.T) {
 	bookRepo.Save(book1)
 	bookRepo.Save(book2)
 
-	books := bookRepo.FindAll()
+	books, _ := bookRepo.FindAll()
 
 	assertEqualBooks(t, book1, books[0])
 	assertEqualBooks(t, book2, books[1])
@@ -122,7 +122,7 @@ func Test_UserRepository_Save_Find(t *testing.T) {
 	}
 	userRepo.Save(user)
 
-	found := userRepo.FindByEmail("email")
+	found, _ := userRepo.FindByEmail("email")
 	assert.Equal(t, user.Email, found.Email)
 	assertEqualBooks(t, user.TakenBooks[0], found.TakenBooks[0])
 	assertEqualBooks(t, user.ReturnedBooks[0], found.ReturnedBooks[0])
@@ -166,7 +166,7 @@ func Test_UserRepository_FindAll(t *testing.T) {
 	userRepo.Save(user1)
 	userRepo.Save(user2)
 
-	users := userRepo.FindAll()
+	users, _ := userRepo.FindAll()
 
 	assertEqualUsers(t, user1, users[0])
 	assertEqualUsers(t, user2, users[1])
@@ -202,7 +202,7 @@ func Test_UserRepository_UpdateTakenBooks(t *testing.T) {
 	userRepo.Save(user)
 	userRepo.UpdateTakenBooks(user, []entities.Book{newBook})
 
-	user = userRepo.FindByEmail("email")
+	user, _ = userRepo.FindByEmail("email")
 	assertEqualBooks(t, newBook, user.TakenBooks[0])
 }
 
@@ -236,7 +236,7 @@ func Test_UserRepository_UpdateReturnedBooks(t *testing.T) {
 	userRepo.Save(user)
 	userRepo.UpdateReturnedBooks(user, []entities.Book{newBook})
 
-	user = userRepo.FindByEmail("email")
+	user, _ = userRepo.FindByEmail("email")
 	assertEqualBooks(t, newBook, user.ReturnedBooks[0])
 }
 

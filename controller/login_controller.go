@@ -36,11 +36,11 @@ func (lc *loginController) Login(c *gin.Context) {
 		return
 	}
 	//check if the user exist:
-	user := lc.userService.FindByEmail(u.Email)
-	// if err != nil {
-	// 	c.JSON(http.StatusNotFound, err.Error())
-	// 	return
-	// }
+	user, err := lc.userService.FindByEmail(u.Email)
+	if err != nil {
+		c.JSON(http.StatusNotFound, USER_NOT_FOUND)
+		return
+	}
 	//since after the user logged out, we destroyed that record in the database so that same jwt token can't be used twice. We need to create the token again
 	authData, err := lc.authRepository.CreateAuth(uint64(user.ID), user.Role)
 	if err != nil {

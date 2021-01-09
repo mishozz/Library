@@ -58,7 +58,7 @@ func TestExtractTokenAuth(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoX3V1aWQiOiJjMmUxYjBjMy00ZGRjLTQ0NjUtYWVkNC1iNGE2NDM5NzI4M2MiLCJhdXRob3JpemVkIjp0cnVlLCJ1c2VyX2lkIjoxfQ.FWbfdhEJeK7mjZ-lWvs9scuyUrSKPrC4xafUoEqkduc"
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoX3V1aWQiOiIzZTY0NjM0MS0wMzdhLTRmZjMtOGViYy0wNzRlNDdmZTNmMzAiLCJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2MTAxODg4NzIsInVzZXJfaWQiOjEsInVzZXJfcm9sZSI6IkFkbWluIn0.zxTRJEJhwABZXQ04bMxwwCJDvgvkgt8S1yyWQFmEE-s"
 
 	tokenString := fmt.Sprintf("Bearer %v", token)
 	req.Header.Set("Authorization", tokenString)

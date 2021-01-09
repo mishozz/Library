@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/service"
-	"github.com/stretchr/stew/slice"
+	"github.com/mishozz/Library/utils"
 )
 
 const (
@@ -62,39 +62,57 @@ func NewUserController(userService service.UserService, bookService service.Book
 }
 
 func (c *userController) GetAll(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, c.userService.FindAll())
+	books, err := c.userService.FindAll()
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, "Internal error")
+		return
+	}
+	ctx.JSON(http.StatusOK, books)
 }
 
 func (c *userController) GetByEmail(ctx *gin.Context) {
 	email := ctx.Param("email")
-	if !c.userService.UserExists(email) {
+	user, err := c.userService.FindByEmail(email)
+	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: USER_NOT_FOUND})
-	} else {
-		ctx.JSON(http.StatusOK, c.userService.FindByEmail(email))
+		return
 	}
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (c *userController) TakeBook(ctx *gin.Context) {
 	isbn := ctx.Param("isbn")
 	email := ctx.Param("email")
 
-	if !c.userService.UserExists(email) {
+	user, err := c.userService.FindByEmail(email)
+	if err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: USER_NOT_FOUND})
-	} else if !c.bookService.BookExists(isbn) {
-		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
-	} else {
-		book := c.bookService.FindByIsbn(isbn)
-		user := c.userService.FindByEmail(email)
-
-		if book.AvailableUnits <= 0 {
-			ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: NO_AVAILABLE_UNITS})
-		} else if slice.Contains(user.TakenBooks, book) {
-			ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN})
-		} else {
-			c.userService.TakeBook(user, book)
-			ctx.JSON(http.StatusCreated, gin.H{MESSAGE: "Book successfully taken"})
-		}
+		return
 	}
+
+	book, err := c.bookService.FindByIsbn(isbn)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
+		return
+	}
+
+	if book.AvailableUnits <= 0 {
+		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: NO_AVAILABLE_UNITS})
+		return
+	}
+	if utils.Contains(user.TakenBooks, book) {
+		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN})
+		return
+	}
+
+	err = c.userService.TakeBook(user, book)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{MESSAGE: "unable to take book"})
+		return
+	}
+
+	ctx.JSON(http.StatusCreated, gin.H{MESSAGE: "Book successfully taken"})
+
 }
 
 func (c *userController) ReturnBook(ctx *gin.Context) {
@@ -103,11 +121,24 @@ func (c *userController) ReturnBook(ctx *gin.Context) {
 
 	if !c.userService.IsBookTakenByUser(email, isbn) {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_IS_NOT_TAKEN})
-	} else {
-		book := c.bookService.FindByIsbn(isbn)
-		user := c.userService.FindByEmail(email)
-
-		c.userService.ReturnBook(user, book)
-		ctx.JSON(http.StatusNoContent, gin.H{MESSAGE: "Book successfuly returned"})
+		return
 	}
+
+	book, err := c.bookService.FindByIsbn(isbn)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
+		return
+	}
+	user, err := c.userService.FindByEmail(email)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: USER_NOT_FOUND})
+		return
+	}
+	err = c.userService.ReturnBook(user, book)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{ERROR_MESSAGE: "unable to return book"})
+		return
+	}
+	ctx.JSON(http.StatusNoContent, gin.H{MESSAGE: "Book successfuly returned"})
+
 }

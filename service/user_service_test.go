@@ -14,21 +14,23 @@ type mockUserRepository struct {
 
 func (m *mockUserRepository) Save(user entities.User) {}
 
-func (m *mockUserRepository) FindByEmail(email string) entities.User {
+func (m *mockUserRepository) FindByEmail(email string) (entities.User, error) {
 	args := m.Called(email)
-	return args.Get(0).(entities.User)
+	return args.Get(0).(entities.User), args.Error(1)
 }
-func (m *mockUserRepository) FindAll() []entities.User {
+func (m *mockUserRepository) FindAll() ([]entities.User, error) {
 	args := m.Called()
-	return args.Get(0).([]entities.User)
+	return args.Get(0).([]entities.User), args.Error(1)
 }
 
-func (m *mockUserRepository) UpdateTakenBooks(user entities.User, takenBooks []entities.Book) {
-	m.Called(user, takenBooks)
+func (m *mockUserRepository) UpdateTakenBooks(user entities.User, takenBooks []entities.Book) error {
+	args := m.Called(user, takenBooks)
+	return args.Error(0)
 }
 
-func (m *mockUserRepository) UpdateReturnedBooks(user entities.User, returnedBooks []entities.Book) {
-	m.Called(user, returnedBooks)
+func (m *mockUserRepository) UpdateReturnedBooks(user entities.User, returnedBooks []entities.Book) error {
+	args := m.Called(user, returnedBooks)
+	return args.Error(0)
 }
 
 func Test_NewUserService(t *testing.T) {
@@ -52,7 +54,7 @@ func Test_UserService_FindByEmail(t *testing.T) {
 	mockUserRepository := &mockUserRepository{}
 	mockBookRepository := &mockBookRepository{}
 	service := NewUserService(mockUserRepo(mockUserRepository), mockBookRepository)
-	user := service.FindByEmail("test")
+	user, _ := service.FindByEmail("test")
 	assert.Equal(t, expectedUser, user)
 	mockUserRepository.AssertExpectations(t)
 }
@@ -66,45 +68,9 @@ func Test_UserService_FindAll(t *testing.T) {
 	mockUserRepository := &mockUserRepository{}
 	mockBookRepository := &mockBookRepository{}
 	service := NewUserService(mockUserRepo(mockUserRepository), mockBookRepository)
-	users := service.userRepository.FindAll()
+	users, _ := service.userRepository.FindAll()
 	assert.Equal(t, expectedUsers, users)
 	mockUserRepository.AssertExpectations(t)
-}
-
-func Test_UserService_UserExists(t *testing.T) {
-	tests := []struct {
-		name         string
-		mockUserRepo func(m *mockUserRepository) *mockUserRepository
-		expected     bool
-	}{{
-		name: "user exists",
-		mockUserRepo: func(m *mockUserRepository) *mockUserRepository {
-			m.On("FindByEmail", "test").Return(entities.User{
-				Email: "test",
-			})
-			return m
-		},
-		expected: true,
-	}, {
-		name: "user does not exist",
-		mockUserRepo: func(m *mockUserRepository) *mockUserRepository {
-			m.On("FindByEmail", "test").Return(entities.User{})
-			return m
-		},
-		expected: false,
-	}}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			mockUserRepository := &mockUserRepository{}
-			mockBookRepository := &mockBookRepository{}
-			service := NewUserService(tt.mockUserRepo(mockUserRepository), mockBookRepository)
-			flag := service.UserExists("test")
-			assert.Equal(t, tt.expected, flag)
-			mockBookRepository.AssertExpectations(t)
-			mockUserRepository.AssertExpectations(t)
-		})
-	}
 }
 
 func Test_UserService_TakeBook(t *testing.T) {

@@ -1,18 +1,16 @@
 package service
 
 import (
-	"reflect"
-
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
+	"github.com/mishozz/Library/utils"
 )
 
 type UserService interface {
-	FindByEmail(email string) entities.User
-	FindAll() []entities.User
-	UserExists(email string) bool
-	TakeBook(user entities.User, book entities.Book)
-	ReturnBook(user entities.User, book entities.Book)
+	FindByEmail(email string) (entities.User, error)
+	FindAll() ([]entities.User, error)
+	TakeBook(user entities.User, book entities.Book) error
+	ReturnBook(user entities.User, book entities.Book) error
 	IsBookTakenByUser(email string, isbn string) bool
 }
 
@@ -28,72 +26,67 @@ func NewUserService(userRepository repositories.UserRepository, bookRepository r
 	}
 }
 
-func (s *userService) FindByEmail(email string) entities.User {
+func (s *userService) FindByEmail(email string) (entities.User, error) {
 	return s.userRepository.FindByEmail(email)
 }
 
-func (s *userService) FindAll() []entities.User {
+func (s *userService) FindAll() ([]entities.User, error) {
 	return s.userRepository.FindAll()
 }
 
-func (s *userService) UserExists(email string) bool {
-	user := s.userRepository.FindByEmail(email)
-	return !reflect.ValueOf(user).IsZero()
-}
-
-func (s *userService) TakeBook(user entities.User, book entities.Book) {
+func (s *userService) TakeBook(user entities.User, book entities.Book) error {
 	book.AvailableUnits = book.AvailableUnits - 1
 	user.TakenBooks = append(user.TakenBooks, book)
 
-	s.bookRepository.UpdateUnits(book)
-	s.userRepository.UpdateTakenBooks(user, user.TakenBooks)
-
-	if contains(user.ReturnedBooks, book) {
-		user.ReturnedBooks = remove(user.ReturnedBooks, book)
-		s.userRepository.UpdateReturnedBooks(user, user.ReturnedBooks)
+	err := s.bookRepository.UpdateUnits(book)
+	if err != nil {
+		return err
 	}
+	err = s.userRepository.UpdateTakenBooks(user, user.TakenBooks)
+	if err != nil {
+		return err
+	}
+
+	if utils.Contains(user.ReturnedBooks, book) {
+		user.ReturnedBooks = utils.Remove(user.ReturnedBooks, book)
+		err = s.userRepository.UpdateReturnedBooks(user, user.ReturnedBooks)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func (s *userService) ReturnBook(user entities.User, book entities.Book) {
+func (s *userService) ReturnBook(user entities.User, book entities.Book) error {
 	book.AvailableUnits = book.AvailableUnits + 1
 	user.ReturnedBooks = append(user.ReturnedBooks, book)
-	user.TakenBooks = remove(user.TakenBooks, book)
+	user.TakenBooks = utils.Remove(user.TakenBooks, book)
 
-	s.bookRepository.UpdateUnits(book)
-	s.userRepository.UpdateReturnedBooks(user, user.ReturnedBooks)
-	s.userRepository.UpdateTakenBooks(user, user.TakenBooks)
+	err := s.bookRepository.UpdateUnits(book)
+	if err != nil {
+		return err
+	}
+	err = s.userRepository.UpdateReturnedBooks(user, user.ReturnedBooks)
+	if err != nil {
+		return err
+	}
+	err = s.userRepository.UpdateTakenBooks(user, user.TakenBooks)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *userService) IsBookTakenByUser(email string, isbn string) bool {
-	book := s.bookRepository.Find(isbn)
-	if reflect.ValueOf(book).IsZero() {
+	book, err := s.bookRepository.Find(isbn)
+	if err != nil {
 		return false
 	}
 
-	user := s.userRepository.FindByEmail(email)
-	if reflect.ValueOf(user).IsZero() {
+	user, err := s.userRepository.FindByEmail(email)
+	if err != nil {
 		return false
 	}
 
-	return contains(user.TakenBooks, book)
-}
-
-func remove(slice []entities.Book, book entities.Book) []entities.Book {
-	var s int
-	for index, x := range slice {
-		if x.Isbn == book.Isbn {
-			s = index
-			break
-		}
-	}
-	return append(slice[:s], slice[s+1:]...)
-}
-
-func contains(slice []entities.Book, book entities.Book) bool {
-	for _, x := range slice {
-		if x.Isbn == book.Isbn {
-			return true
-		}
-	}
-	return false
+	return utils.Contains(user.TakenBooks, book)
 }

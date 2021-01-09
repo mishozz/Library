@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,27 +17,24 @@ type mockUserService struct {
 	mock.Mock
 }
 
-func (m *mockUserService) FindByEmail(email string) entities.User {
+func (m *mockUserService) FindByEmail(email string) (entities.User, error) {
 	args := m.Called(email)
-	return args.Get(0).(entities.User)
+	return args.Get(0).(entities.User), args.Error(1)
 }
 
-func (m *mockUserService) FindAll() []entities.User {
+func (m *mockUserService) FindAll() ([]entities.User, error) {
 	args := m.Called()
-	return args.Get(0).([]entities.User)
+	return args.Get(0).([]entities.User), args.Error(1)
 }
 
-func (m *mockUserService) UserExists(email string) bool {
-	args := m.Called(email)
-	return args.Get(0).(bool)
+func (m *mockUserService) TakeBook(user entities.User, book entities.Book) error {
+	args := m.Called(user, book)
+	return args.Error(0)
 }
 
-func (m *mockUserService) TakeBook(user entities.User, book entities.Book) {
-	m.Called(user, book)
-}
-
-func (m *mockUserService) ReturnBook(user entities.User, book entities.Book) {
-	m.Called(user, book)
+func (m *mockUserService) ReturnBook(user entities.User, book entities.Book) error {
+	args := m.Called(user, book)
+	return args.Error(0)
 }
 
 func (m *mockUserService) IsBookTakenByUser(email string, isbn string) bool {
@@ -66,7 +64,7 @@ func Test_UserController_GetAll(t *testing.T) {
 	}}
 
 	mockService := func(m *mockUserService) *mockUserService {
-		m.On("FindAll").Return(expectedUsers)
+		m.On("FindAll").Return(expectedUsers, nil)
 		return m
 	}
 	mockBookService := &mockBookService{}
@@ -99,10 +97,9 @@ func Test_UserController_GetByEmail(t *testing.T) {
 	}{{
 		name: "success",
 		mockService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(true)
 			m.On("FindByEmail", "email").Return(entities.User{
 				Email: "email",
-			})
+			}, nil)
 			return m
 		},
 		respBody:   gin.H{"Email": "email", "Returned_books": interface{}(nil), "Taken_books": interface{}(nil)},
@@ -110,7 +107,7 @@ func Test_UserController_GetByEmail(t *testing.T) {
 	}, {
 		name: "user does not exist",
 		mockService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(false)
+			m.On("FindByEmail", "email").Return(entities.User{}, errors.New("Not found"))
 			return m
 		},
 		respBody:   gin.H{ERROR_MESSAGE: USER_NOT_FOUND},
@@ -165,18 +162,16 @@ func Test_UserController_TakeBook(t *testing.T) {
 	}{{
 		name: "success",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("FindByIsbn", "test").Return(book)
-			m.On("BookExists", "test").Return(true)
+			m.On("FindByIsbn", "test").Return(book, nil)
 			return m
 		},
 		mockUserService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(true)
 			m.On("FindByEmail", "email").Return(entities.User{
 				Email: "email",
-			})
+			}, nil)
 			m.On("TakeBook", entities.User{
 				Email: "email",
-			}, book)
+			}, book).Return(nil)
 			return m
 		},
 		respBody:   gin.H{MESSAGE: "Book successfully taken"},
@@ -184,15 +179,13 @@ func Test_UserController_TakeBook(t *testing.T) {
 	}, {
 		name: "no available units",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("FindByIsbn", "test").Return(invalidBook)
-			m.On("BookExists", "test").Return(true)
+			m.On("FindByIsbn", "test").Return(invalidBook, nil)
 			return m
 		},
 		mockUserService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(true)
 			m.On("FindByEmail", "email").Return(entities.User{
 				Email: "email",
-			})
+			}, nil)
 			return m
 		},
 		respBody:   gin.H{ERROR_MESSAGE: NO_AVAILABLE_UNITS},
@@ -200,16 +193,14 @@ func Test_UserController_TakeBook(t *testing.T) {
 	}, {
 		name: "book is already taken by this user",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("FindByIsbn", "test").Return(book)
-			m.On("BookExists", "test").Return(true)
+			m.On("FindByIsbn", "test").Return(book, nil)
 			return m
 		},
 		mockUserService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(true)
 			m.On("FindByEmail", "email").Return(entities.User{
 				Email:      "email",
 				TakenBooks: []entities.Book{book},
-			})
+			}, nil)
 			return m
 		},
 		respBody:   gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN},
@@ -217,7 +208,7 @@ func Test_UserController_TakeBook(t *testing.T) {
 	}, {
 		name: "user doesnt exists",
 		mockUserService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(false)
+			m.On("FindByEmail", "email").Return(entities.User{}, errors.New("Not found"))
 			return m
 		},
 		mockBookService: func(m *mockBookService) *mockBookService {
@@ -228,11 +219,11 @@ func Test_UserController_TakeBook(t *testing.T) {
 	}, {
 		name: "book doesnt exists",
 		mockUserService: func(m *mockUserService) *mockUserService {
-			m.On("UserExists", "email").Return(true)
+			m.On("FindByEmail", "email").Return(entities.User{}, nil)
 			return m
 		},
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("BookExists", "test").Return(false)
+			m.On("FindByIsbn", "test").Return(book, errors.New("Not found"))
 			return m
 		},
 		respBody:   gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND},
@@ -276,12 +267,11 @@ func Test_UserController_ReturnBook(t *testing.T) {
 		name            string
 		mockBookService func(m *mockBookService) *mockBookService
 		mockUserService func(m *mockUserService) *mockUserService
-		respBody        gin.H
 		respStatus      int
 	}{{
 		name: "success",
 		mockBookService: func(m *mockBookService) *mockBookService {
-			m.On("FindByIsbn", "test").Return(book)
+			m.On("FindByIsbn", "test").Return(book, nil)
 			return m
 		},
 		mockUserService: func(m *mockUserService) *mockUserService {
@@ -289,11 +279,11 @@ func Test_UserController_ReturnBook(t *testing.T) {
 			m.On("FindByEmail", "email").Return(entities.User{
 				Email:      "email",
 				TakenBooks: []entities.Book{book},
-			})
+			}, nil)
 			m.On("ReturnBook", entities.User{
 				Email:      "email",
 				TakenBooks: []entities.Book{book},
-			}, book)
+			}, book).Return(nil)
 			return m
 		},
 		respStatus: 204,
@@ -304,6 +294,29 @@ func Test_UserController_ReturnBook(t *testing.T) {
 		},
 		mockUserService: func(m *mockUserService) *mockUserService {
 			m.On("IsBookTakenByUser", "email", "test").Return(false)
+			return m
+		},
+		respStatus: 404,
+	}, {
+		name: "user not found",
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("IsBookTakenByUser", "email", "test").Return(true)
+			m.On("FindByEmail", "email").Return(entities.User{}, errors.New("Not found"))
+			return m
+		},
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(book, nil)
+			return m
+		},
+		respStatus: 404,
+	}, {
+		name: "book not found",
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("IsBookTakenByUser", "email", "test").Return(true)
+			return m
+		},
+		mockBookService: func(m *mockBookService) *mockBookService {
+			m.On("FindByIsbn", "test").Return(entities.Book{}, errors.New("Not found"))
 			return m
 		},
 		respStatus: 404,

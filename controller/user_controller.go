@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mishozz/Library/middleware"
 	"github.com/mishozz/Library/service"
 	"github.com/mishozz/Library/utils"
 )
@@ -27,16 +28,16 @@ func HandleUserRequests(server *gin.Engine, userController UserController, login
 			loginController.Login(c)
 		})
 
-		apiRoutes.GET("users", func(ctx *gin.Context) {
+		apiRoutes.GET("users", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
 			userController.GetAll(ctx)
 		})
-		apiRoutes.GET("users/:email", func(ctx *gin.Context) {
+		apiRoutes.GET("users/:email", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
 			userController.GetByEmail(ctx)
 		})
-		apiRoutes.POST("users/:email/:isbn", func(ctx *gin.Context) {
+		apiRoutes.POST("users/:email/:isbn", middleware.TokenRoleMiddleware(USER), func(ctx *gin.Context) {
 			userController.TakeBook(ctx)
 		})
-		apiRoutes.DELETE("users/:email/:isbn", func(ctx *gin.Context) {
+		apiRoutes.DELETE("users/:email/:isbn", middleware.TokenRoleMiddleware(USER), func(ctx *gin.Context) {
 			userController.ReturnBook(ctx)
 		})
 	}

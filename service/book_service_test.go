@@ -49,13 +49,15 @@ func Test_NewBookService(t *testing.T) {
 }
 
 func Test_BookService_Save(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
-		service := bookService{
-			repository: &mockBookRepository{},
-		}
-		book := entities.Book{}
-		service.Save(book)
-	})
+	mockRepo := func(m *mockBookRepository) *mockBookRepository {
+		m.On("Save", mock.Anything).Return(nil)
+		return m
+	}
+	service := bookService{
+		repository: mockRepo(&mockBookRepository{}),
+	}
+	book := entities.Book{}
+	service.Save(book)
 }
 
 func Test_BookService_FindAll(t *testing.T) {
@@ -67,7 +69,7 @@ func Test_BookService_FindAll(t *testing.T) {
 	}{{
 		name: "find empty slice",
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("FindAll").Return([]entities.Book{})
+			m.On("FindAll").Return([]entities.Book{}, nil)
 			return m
 		},
 		expected: []entities.Book{},
@@ -82,7 +84,7 @@ func Test_BookService_FindAll(t *testing.T) {
 					Title:          "test",
 					AvailableUnits: 1,
 				},
-			})
+			}, nil)
 			return m
 		},
 		expected: []entities.Book{
@@ -120,7 +122,7 @@ func Test_BookService_FindByIsbn(t *testing.T) {
 			Author:         "test",
 			Title:          "test",
 			AvailableUnits: 1,
-		})
+		}, nil)
 		return m
 	}
 	expectedBook := entities.Book{
@@ -135,5 +137,35 @@ func Test_BookService_FindByIsbn(t *testing.T) {
 	}
 	book, _ := service.FindByIsbn("test")
 	assert.Equal(t, expectedBook, book)
+	m.AssertExpectations(t)
+}
+
+func Test_BookService_Delete(t *testing.T) {
+	mockRepo := func(m *mockBookRepository) *mockBookRepository {
+		m.On("Delete", "test").Return(nil)
+		return m
+	}
+
+	m := &mockBookRepository{}
+	service := bookService{
+		repository: mockRepo(m),
+	}
+	err := service.Delete("test")
+	assert.Nil(t, err)
+	m.AssertExpectations(t)
+}
+
+func Test_BookService_IsBookTaken(t *testing.T) {
+	mockRepo := func(m *mockBookRepository) *mockBookRepository {
+		m.On("IsBookTaken", "test").Return(true)
+		return m
+	}
+
+	m := &mockBookRepository{}
+	service := bookService{
+		repository: mockRepo(m),
+	}
+	err := service.IsBookTaken("test")
+	assert.True(t, err)
 	m.AssertExpectations(t)
 }

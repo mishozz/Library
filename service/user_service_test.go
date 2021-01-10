@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/mishozz/Library/entities"
@@ -48,7 +49,7 @@ func Test_UserService_FindByEmail(t *testing.T) {
 	mockUserRepo := func(m *mockUserRepository) *mockUserRepository {
 		m.On("FindByEmail", "test").Return(entities.User{
 			Email: "test",
-		})
+		}, nil)
 		return m
 	}
 	mockUserRepository := &mockUserRepository{}
@@ -62,7 +63,7 @@ func Test_UserService_FindByEmail(t *testing.T) {
 func Test_UserService_FindAll(t *testing.T) {
 	expectedUsers := []entities.User{entities.User{Email: "test1"}, entities.User{Email: "test2"}}
 	mockUserRepo := func(m *mockUserRepository) *mockUserRepository {
-		m.On("FindAll").Return([]entities.User{entities.User{Email: "test1"}, entities.User{Email: "test2"}})
+		m.On("FindAll").Return([]entities.User{entities.User{Email: "test1"}, entities.User{Email: "test2"}}, nil)
 		return m
 	}
 	mockUserRepository := &mockUserRepository{}
@@ -98,11 +99,11 @@ func Test_UserService_TakeBook(t *testing.T) {
 			m.On("UpdateTakenBooks", entities.User{
 				Email:      "email1",
 				TakenBooks: []entities.Book{book2},
-			}, []entities.Book{book2}).Once()
+			}, []entities.Book{book2}).Return(nil).Once()
 			return m
 		},
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("UpdateUnits", book2).Once()
+			m.On("UpdateUnits", book2).Return(nil).Once()
 			return m
 		},
 		user: entities.User{Email: "email1"},
@@ -113,16 +114,16 @@ func Test_UserService_TakeBook(t *testing.T) {
 				Email:         "email1",
 				TakenBooks:    []entities.Book{book2},
 				ReturnedBooks: []entities.Book{book1},
-			}, []entities.Book{book2}).Once()
+			}, []entities.Book{book2}).Return(nil).Once()
 			m.On("UpdateReturnedBooks", entities.User{
 				Email:         "email1",
 				TakenBooks:    []entities.Book{book2},
 				ReturnedBooks: []entities.Book{},
-			}, []entities.Book{}).Once()
+			}, []entities.Book{}).Return(nil).Once()
 			return m
 		},
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("UpdateUnits", book2).Once()
+			m.On("UpdateUnits", book2).Return(nil).Once()
 			return m
 		},
 		user: entities.User{
@@ -164,18 +165,18 @@ func Test_UserService_ReturnBook(t *testing.T) {
 				TakenBooks:    []entities.Book{},
 				ReturnedBooks: []entities.Book{book2},
 			},
-			[]entities.Book{}).Once()
+			[]entities.Book{}).Return(nil).Once()
 		m.On("UpdateReturnedBooks",
 			entities.User{
 				Email:         "email1",
 				TakenBooks:    []entities.Book{},
 				ReturnedBooks: []entities.Book{book2},
 			},
-			[]entities.Book{book2}).Once()
+			[]entities.Book{book2}).Return(nil).Once()
 		return m
 	}
 	mockBookRepo := func(m *mockBookRepository) *mockBookRepository {
-		m.On("UpdateUnits", book2).Once()
+		m.On("UpdateUnits", book2).Return(nil).Once()
 		return m
 	}
 	mockUserRepository := &mockUserRepository{}
@@ -207,22 +208,22 @@ func Test_UserService_IsBookTakenByUser(t *testing.T) {
 				TakenBooks: []entities.Book{
 					book,
 				},
-			})
+			}, nil)
 			return m
 		},
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("Find", "test").Return(book)
+			m.On("Find", "test").Return(book, nil)
 			return m
 		},
 		expected: true,
 	}, {
 		name: "user does not exist",
 		mockUserRepo: func(m *mockUserRepository) *mockUserRepository {
-			m.On("FindByEmail", "email").Return(entities.User{})
+			m.On("FindByEmail", "email").Return(entities.User{}, nil)
 			return m
 		},
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("Find", "test").Return(book)
+			m.On("Find", "test").Return(book, nil)
 			return m
 		},
 		expected: false,
@@ -231,11 +232,11 @@ func Test_UserService_IsBookTakenByUser(t *testing.T) {
 		mockUserRepo: func(m *mockUserRepository) *mockUserRepository {
 			m.On("FindByEmail", "email").Return(entities.User{
 				Email: "email",
-			})
+			}, nil)
 			return m
 		},
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("Find", "test").Return(book)
+			m.On("Find", "test").Return(book, nil)
 			return m
 		},
 		expected: false,
@@ -245,7 +246,7 @@ func Test_UserService_IsBookTakenByUser(t *testing.T) {
 			return m
 		},
 		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
-			m.On("Find", "test").Return(entities.Book{})
+			m.On("Find", "test").Return(entities.Book{}, errors.New("not found"))
 			return m
 		},
 		expected: false,

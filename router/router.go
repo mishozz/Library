@@ -36,7 +36,7 @@ func HandleRequests(server *gin.Engine, bookController controller.BookController
 		})
 
 		apiRoutes.POST("logout", func(c *gin.Context) {
-			loginController.Login(c)
+			loginController.LogOut(c)
 		})
 
 		apiRoutes.GET("users", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {

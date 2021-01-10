@@ -1,3 +1,6 @@
+# github.com/DATA-DOG/go-sqlmock v1.5.0
+## explicit
+github.com/DATA-DOG/go-sqlmock
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
 # github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -46,9 +49,6 @@ github.com/pkg/errors
 github.com/pmezard/go-difflib/difflib
 # github.com/stretchr/objx v0.1.0
 github.com/stretchr/objx
-# github.com/stretchr/stew v0.0.0-20130812190256-80ef0842b48b
-## explicit
-github.com/stretchr/stew/slice
 # github.com/stretchr/testify v1.6.1
 ## explicit
 github.com/stretchr/testify/assert

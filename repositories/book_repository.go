@@ -52,7 +52,6 @@ func (b *BookRepositoryImpl) IsBookTaken(isbn string) bool {
 
 	var users []entities.User
 	b.connection.Model(&book).Association("UserTaken").Find(&users)
-	//b.connection.Unscoped().Table("user_taken").Where("book_id = ?", book.Model.ID).Find(&users)
 	if len(users) != 0 {
 		return true
 	}

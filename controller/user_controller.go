@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mishozz/Library/middleware"
 	"github.com/mishozz/Library/service"
 	"github.com/mishozz/Library/utils"
 )
@@ -16,32 +15,6 @@ const (
 	BOOK_IS_NOT_TAKEN  = "This book is not taken"
 	MESSAGE            = "message"
 )
-
-func HandleUserRequests(server *gin.Engine, userController UserController, loginController LoginController) {
-	apiRoutes := server.Group(LIBRARY_API_V1)
-	{
-		apiRoutes.POST("login", func(c *gin.Context) {
-			loginController.Login(c)
-		})
-
-		apiRoutes.POST("logout", func(c *gin.Context) {
-			loginController.Login(c)
-		})
-
-		apiRoutes.GET("users", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
-			userController.GetAll(ctx)
-		})
-		apiRoutes.GET("users/:email", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
-			userController.GetByEmail(ctx)
-		})
-		apiRoutes.POST("users/:email/:isbn", middleware.TokenRoleMiddleware(USER), func(ctx *gin.Context) {
-			userController.TakeBook(ctx)
-		})
-		apiRoutes.DELETE("users/:email/:isbn", middleware.TokenRoleMiddleware(USER), func(ctx *gin.Context) {
-			userController.ReturnBook(ctx)
-		})
-	}
-}
 
 type UserController interface {
 	TakeBook(ctx *gin.Context)

@@ -6,6 +6,7 @@ import (
 	"github.com/mishozz/Library/controller"
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
+	"github.com/mishozz/Library/router"
 	"github.com/mishozz/Library/service"
 	"github.com/mishozz/Library/utils"
 )
@@ -39,8 +40,7 @@ func main() {
 
 	server := gin.New()
 
-	controller.HandleBookRequests(server, bookController)
-	controller.HandleUserRequests(server, userController, loginController)
+	router.HandleRequests(server, bookController, userController, loginController)
 
 	server.Run(":" + PORT)
 }

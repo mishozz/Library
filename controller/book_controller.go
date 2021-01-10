@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/entities"
-	"github.com/mishozz/Library/middleware"
 
 	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/service"
@@ -22,27 +21,6 @@ const (
 	ADMIN = "Admin"
 	USER  = "User"
 )
-
-func HandleBookRequests(server *gin.Engine, bookController BookController) {
-	apiRoutes := server.Group(LIBRARY_API_V1)
-	{
-		apiRoutes.GET("/books", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
-			bookController.GetAll(ctx)
-		})
-
-		apiRoutes.GET("/books/:isbn", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
-			bookController.GetByIsbn(ctx)
-		})
-
-		apiRoutes.DELETE("/books/:isbn", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
-			bookController.Delete(ctx)
-		})
-
-		apiRoutes.POST("/books", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
-			bookController.Save(ctx)
-		})
-	}
-}
 
 type BookController interface {
 	GetAll(ctx *gin.Context)

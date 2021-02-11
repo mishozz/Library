@@ -31,6 +31,10 @@ func HandleRequests(server *gin.Engine, bookController controller.BookController
 			bookController.Save(ctx)
 		})
 
+		apiRoutes.POST("register", func(c *gin.Context) {
+			loginController.Register(c)
+		})
+
 		apiRoutes.POST("login", func(c *gin.Context) {
 			loginController.Login(c)
 		})

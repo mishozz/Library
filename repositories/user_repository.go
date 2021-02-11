@@ -7,7 +7,7 @@ import (
 )
 
 type UserRepository interface {
-	Save(user entities.User)
+	Save(user entities.User) error
 	FindByEmail(email string) (entities.User, error)
 	FindAll() ([]entities.User, error)
 	UpdateTakenBooks(user entities.User, takenBooks []entities.Book) error
@@ -24,8 +24,8 @@ func NewUserRepository(db config.Database) *userRepository {
 	}
 }
 
-func (r *userRepository) Save(user entities.User) {
-	r.connection.Create(&user)
+func (r *userRepository) Save(user entities.User) error {
+	return r.connection.Debug().Create(&user).Error
 }
 
 func (r *userRepository) FindByEmail(email string) (entities.User, error) {

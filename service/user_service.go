@@ -4,6 +4,7 @@ import (
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService interface {
@@ -12,6 +13,7 @@ type UserService interface {
 	TakeBook(user entities.User, book entities.Book) error
 	ReturnBook(user entities.User, book entities.Book) error
 	IsBookTakenByUser(email string, isbn string) bool
+	Register(user entities.User) error
 }
 
 type userService struct {
@@ -89,4 +91,14 @@ func (s *userService) IsBookTakenByUser(email string, isbn string) bool {
 	}
 
 	return utils.Contains(user.TakenBooks, book)
+}
+
+func (s *userService) Register(user entities.User) error {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	if err != nil {
+		return err
+	}
+	user.Password = string(bytes)
+	user.Role = "User"
+	return s.userRepository.Save(user)
 }

@@ -13,7 +13,9 @@ type mockUserRepository struct {
 	mock.Mock
 }
 
-func (m *mockUserRepository) Save(user entities.User) {}
+func (m *mockUserRepository) Save(user entities.User) error {
+	return nil
+}
 
 func (m *mockUserRepository) FindByEmail(email string) (entities.User, error) {
 	args := m.Called(email)

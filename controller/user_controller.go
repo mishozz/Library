@@ -36,12 +36,15 @@ func NewUserController(userService service.UserService, bookService service.Book
 }
 
 func (c *userController) GetAll(ctx *gin.Context) {
-	books, err := c.userService.FindAll()
+	users, err := c.userService.FindAll()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, "Internal error")
 		return
 	}
-	ctx.JSON(http.StatusOK, books)
+	for _, user := range users {
+		user.Password = ""
+	}
+	ctx.JSON(http.StatusOK, users)
 }
 
 func (c *userController) GetByEmail(ctx *gin.Context) {
@@ -51,6 +54,7 @@ func (c *userController) GetByEmail(ctx *gin.Context) {
 		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: USER_NOT_FOUND})
 		return
 	}
+	user.Password = ""
 	ctx.JSON(http.StatusOK, user)
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/service"
+	"golang.org/x/crypto/bcrypt"
 
 	"net/http"
 )
@@ -15,12 +16,19 @@ import (
 type LoginController interface {
 	Login(c *gin.Context)
 	LogOut(c *gin.Context)
+	Register(c *gin.Context)
 }
 
 type loginController struct {
 	authRepository repositories.AuthRepository
 	userService    service.UserService
 }
+
+var (
+	successullyRegister string = "registered successully"
+	userConflict        string = "this user already exists"
+	wrongPassword       string = "wrong password"
+)
 
 func NewLoginController(authRepo repositories.AuthRepository, userService service.UserService) *loginController {
 	return &loginController{
@@ -39,6 +47,12 @@ func (lc *loginController) Login(c *gin.Context) {
 	user, err := lc.userService.FindByEmail(u.Email)
 	if err != nil {
 		c.JSON(http.StatusNotFound, USER_NOT_FOUND)
+		return
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(u.Password))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, wrongPassword)
 		return
 	}
 	//since after the user logged out, we destroyed that record in the database so that same jwt token can't be used twice. We need to create the token again
@@ -73,4 +87,19 @@ func (lc *loginController) LogOut(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{MESSAGE: "Successfully logged out"})
+}
+
+func (lc *loginController) Register(c *gin.Context) {
+	var user entities.User
+	err := c.ShouldBindJSON(&user)
+	if err != nil {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
+		return
+	}
+	err = lc.userService.Register(user)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: userConflict})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{MESSAGE: successullyRegister})
 }

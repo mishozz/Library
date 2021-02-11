@@ -13,6 +13,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/twinj/uuid v1.0.0
 	go.uber.org/zap v1.16.0
+	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 	golang.org/x/tools v0.0.0-20191112195655-aa38f8e97acc // indirect
 	gopkg.in/stretchr/testify.v1 v1.2.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

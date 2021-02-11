@@ -63,7 +63,8 @@ func Test_LoginController_Login(t *testing.T) {
 				Model: gorm.Model{
 					ID: 1,
 				},
-				Email: "email",
+				Email:    "email",
+				Password: "$2a$14$lFwBpX3h15NHVhjwab9wSO3Crlf9sQWFFZI7DFpLJH8mH4av9dWH6",
 			}, nil)
 			return m
 		},
@@ -76,7 +77,8 @@ func Test_LoginController_Login(t *testing.T) {
 			return m
 		},
 		input: entities.User{
-			Email: "email",
+			Email:    "email",
+			Password: "123",
 		},
 		token:      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRoX3V1aWQiOiI4M2IwOTYxMi05ZGZjLTRjMWQtOGY3ZC1hNTg5YWNlYzcwODEiLCJhdXRob3JpemVkIjp0cnVlLCJ1c2VyX2lkIjo1fQ.otegNS-W9OE8RsqGtiyJRCB-H0YXBygNXP91qeCPdF8",
 		statusCode: 200,

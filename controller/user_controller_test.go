@@ -42,6 +42,11 @@ func (m *mockUserService) IsBookTakenByUser(email string, isbn string) bool {
 	return args.Get(0).(bool)
 }
 
+func (m *mockUserService) Register(user entities.User) error {
+	args := m.Called(user)
+	return args.Error(0)
+}
+
 func Test_NewUserController(t *testing.T) {
 	userService := &mockUserService{}
 	bookService := &mockBookService{}

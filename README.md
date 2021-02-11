@@ -349,6 +349,35 @@
     http.NewRequest("DELETE", "library/api/v1/books/:isbn", nil)
   ``` 
 
+**User Register**
+---
+  Register using an email and password
+
+* **URL**
+  
+   library/api/v1/users/register
+
+*  **URL Params**
+
+   **Required:**
+ 
+    **Request body** `{Email: "email@gmail.com", Password: "password"}`
+
+* **Success Response:**
+
+  * **Code:** 201 CREATED <br />
+
+* **URL**
+
+  library/api/v1/users/register
+
+* **Sample Call:**
+
+  ```go
+    http.NewRequest("POST", "library/api/v1/users/register", sampleBody)
+  ``` 
+  
+
 **User Login**
 ----
   Returns a jwt token which can be used to acces the REST API.

@@ -13,6 +13,7 @@ import (
 	"net/http"
 )
 
+// LoginController is an interface with all the methods we need for the login controller
 type LoginController interface {
 	Login(c *gin.Context)
 	LogOut(c *gin.Context)
@@ -30,6 +31,7 @@ var (
 	wrongPassword       string = "wrong password"
 )
 
+// NewLoginController creates a new instance of the login controller
 func NewLoginController(authRepo repositories.AuthRepository, userService service.UserService) *loginController {
 	return &loginController{
 		authRepository: authRepo,
@@ -46,7 +48,7 @@ func (lc *loginController) Login(c *gin.Context) {
 	//check if the user exist:
 	user, err := lc.userService.FindByEmail(u.Email)
 	if err != nil {
-		c.JSON(http.StatusNotFound, USER_NOT_FOUND)
+		c.JSON(http.StatusNotFound, userNotFound)
 		return
 	}
 
@@ -68,7 +70,7 @@ func (lc *loginController) Login(c *gin.Context) {
 
 	token, loginErr := service.Authorize.SignIn(authD)
 	if loginErr != nil {
-		c.JSON(http.StatusForbidden, gin.H{ERROR_MESSAGE: "Please try to login later"})
+		c.JSON(http.StatusForbidden, gin.H{errorMessage: "Please try to login later"})
 		return
 	}
 	c.JSON(http.StatusOK, token)
@@ -77,29 +79,29 @@ func (lc *loginController) Login(c *gin.Context) {
 func (lc *loginController) LogOut(c *gin.Context) {
 	au, err := auth.ExtractTokenAuth(c.Request)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{ERROR_MESSAGE: "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{errorMessage: "unauthorized"})
 		return
 	}
 	delErr := lc.authRepository.DeleteAuth(au)
 	if delErr != nil {
 		log.Println(delErr)
-		c.JSON(http.StatusUnauthorized, gin.H{ERROR_MESSAGE: "unauthorized"})
+		c.JSON(http.StatusUnauthorized, gin.H{errorMessage: "unauthorized"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{MESSAGE: "Successfully logged out"})
+	c.JSON(http.StatusOK, gin.H{message: "Successfully logged out"})
 }
 
 func (lc *loginController) Register(c *gin.Context) {
 	var user entities.User
 	err := c.ShouldBindJSON(&user)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{errorMessage: invalidRequest})
 		return
 	}
 	err = lc.userService.Register(user)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: userConflict})
+		c.JSON(http.StatusConflict, gin.H{errorMessage: userConflict})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{MESSAGE: successullyRegister})
+	c.JSON(http.StatusCreated, gin.H{message: successullyRegister})
 }

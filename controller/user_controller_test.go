@@ -115,7 +115,7 @@ func Test_UserController_GetByEmail(t *testing.T) {
 			m.On("FindByEmail", "email").Return(entities.User{}, errors.New("Not found"))
 			return m
 		},
-		respBody:   gin.H{ERROR_MESSAGE: USER_NOT_FOUND},
+		respBody:   gin.H{errorMessage: userNotFound},
 		respStatus: 404,
 	}}
 	for _, tt := range tests {
@@ -179,7 +179,7 @@ func Test_UserController_TakeBook(t *testing.T) {
 			}, book).Return(nil)
 			return m
 		},
-		respBody:   gin.H{MESSAGE: "Book successfully taken"},
+		respBody:   gin.H{message: "Book successfully taken"},
 		respStatus: 201,
 	}, {
 		name: "no available units",
@@ -193,7 +193,7 @@ func Test_UserController_TakeBook(t *testing.T) {
 			}, nil)
 			return m
 		},
-		respBody:   gin.H{ERROR_MESSAGE: NO_AVAILABLE_UNITS},
+		respBody:   gin.H{errorMessage: noAvailableUnits},
 		respStatus: 400,
 	}, {
 		name: "book is already taken by this user",
@@ -208,7 +208,7 @@ func Test_UserController_TakeBook(t *testing.T) {
 			}, nil)
 			return m
 		},
-		respBody:   gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN},
+		respBody:   gin.H{errorMessage: bookAlreadyTaken},
 		respStatus: 400,
 	}, {
 		name: "user doesnt exists",
@@ -219,7 +219,7 @@ func Test_UserController_TakeBook(t *testing.T) {
 		mockBookService: func(m *mockBookService) *mockBookService {
 			return m
 		},
-		respBody:   gin.H{ERROR_MESSAGE: USER_NOT_FOUND},
+		respBody:   gin.H{errorMessage: userNotFound},
 		respStatus: 404,
 	}, {
 		name: "book doesnt exists",
@@ -231,7 +231,7 @@ func Test_UserController_TakeBook(t *testing.T) {
 			m.On("FindByIsbn", "test").Return(book, errors.New("Not found"))
 			return m
 		},
-		respBody:   gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND},
+		respBody:   gin.H{errorMessage: bookNotFound},
 		respStatus: 404,
 	}}
 	for _, tt := range tests {

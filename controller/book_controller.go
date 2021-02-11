@@ -11,17 +11,16 @@ import (
 )
 
 const (
-	LIBRARY_API_V1  = "/library/api/v1/"
-	SAVE_SUCCESS    = "successfully saved"
-	INVALID_REQUEST = "Invalid request body"
-	ERROR_MESSAGE   = "error message"
-	BOOK_CONFLICT   = "Every book must have a unique ISBN!"
-	BOOK_NOT_FOUND  = "Book not found"
-
-	ADMIN = "Admin"
-	USER  = "User"
+	saveSuccess    = "successfully saved"
+	invalidRequest = "Invalid request body"
+	errorMessage   = "error message"
+	bookConflict   = "Every book must have a unique ISBN!"
+	bookNotFound   = "Book not found"
+	ADMIN          = "Admin"
+	USER           = "User"
 )
 
+// BookController is an interface with all the methods we need for the book controller
 type BookController interface {
 	GetAll(ctx *gin.Context)
 	GetByIsbn(ctx *gin.Context)
@@ -34,6 +33,7 @@ type bookController struct {
 	authRepository repositories.AuthRepository
 }
 
+// NewBookController creates a new instance of the book controller
 func NewBookController(service service.BookService) *bookController {
 	return &bookController{
 		service: service,
@@ -43,7 +43,7 @@ func NewBookController(service service.BookService) *bookController {
 func (c *bookController) GetAll(ctx *gin.Context) {
 	books, err := c.service.FindAll()
 	if err != nil {
-		ctx.JSON(400, gin.H{ERROR_MESSAGE: "Internal error"})
+		ctx.JSON(400, gin.H{errorMessage: "Internal error"})
 		return
 	}
 	ctx.JSON(200, books)
@@ -53,22 +53,22 @@ func (c *bookController) Save(ctx *gin.Context) {
 	var book entities.Book
 	err := ctx.ShouldBindJSON(&book)
 	if err != nil {
-		ctx.JSON(http.StatusUnprocessableEntity, gin.H{ERROR_MESSAGE: INVALID_REQUEST})
+		ctx.JSON(http.StatusUnprocessableEntity, gin.H{errorMessage: invalidRequest})
 		return
 	}
 	err = c.service.Save(book)
 	if err != nil {
-		ctx.JSON(http.StatusConflict, gin.H{ERROR_MESSAGE: BOOK_CONFLICT})
+		ctx.JSON(http.StatusConflict, gin.H{errorMessage: bookConflict})
 		return
 	}
-	ctx.JSON(http.StatusCreated, gin.H{MESSAGE: SAVE_SUCCESS})
+	ctx.JSON(http.StatusCreated, gin.H{message: saveSuccess})
 }
 
 func (c *bookController) GetByIsbn(ctx *gin.Context) {
 	isbn := ctx.Param("isbn")
 	book, err := c.service.FindByIsbn(isbn)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
+		ctx.JSON(http.StatusNotFound, gin.H{errorMessage: bookNotFound})
 	} else {
 		ctx.JSON(200, book)
 	}
@@ -78,19 +78,19 @@ func (c *bookController) Delete(ctx *gin.Context) {
 	isbn := ctx.Param("isbn")
 	_, err := c.service.FindByIsbn(isbn)
 	if err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND})
+		ctx.JSON(http.StatusNotFound, gin.H{errorMessage: bookNotFound})
 		return
 	}
 
 	if c.service.IsBookTaken(isbn) {
-		ctx.JSON(http.StatusBadRequest, gin.H{ERROR_MESSAGE: BOOK_ALREADY_TAKEN})
+		ctx.JSON(http.StatusBadRequest, gin.H{errorMessage: bookAlreadyTaken})
 		return
 	}
 
 	err = c.service.Delete(isbn)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{ERROR_MESSAGE: "error while deleting"})
+		ctx.JSON(http.StatusInternalServerError, gin.H{errorMessage: "error while deleting"})
 	} else {
-		ctx.JSON(204, gin.H{MESSAGE: "book deleted"})
+		ctx.JSON(204, gin.H{message: "book deleted"})
 	}
 }

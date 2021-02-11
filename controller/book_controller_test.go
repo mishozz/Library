@@ -15,9 +15,7 @@ import (
 )
 
 const (
-	PORT               = "8080"
-	BOOKS_RECOURCE_URL = "http://localhost:8080/library/api/v1/books"
-	APPLICATION_JSON   = "application/json"
+	PORT = "8080"
 )
 
 type mockBookService struct {
@@ -122,7 +120,7 @@ func Test_BookController_Save(t *testing.T) {
 		},
 		input:      validBook,
 		statusCode: http.StatusCreated,
-		respBody:   gin.H{MESSAGE: SAVE_SUCCESS},
+		respBody:   gin.H{message: saveSuccess},
 	}, {
 		name: "invalid book",
 		mockBookService: func(m *mockBookService) *mockBookService {
@@ -130,7 +128,7 @@ func Test_BookController_Save(t *testing.T) {
 		},
 		input:      invalidBook,
 		statusCode: http.StatusUnprocessableEntity,
-		respBody:   gin.H{ERROR_MESSAGE: INVALID_REQUEST},
+		respBody:   gin.H{errorMessage: invalidRequest},
 	}, {
 		name: "book already exists",
 		mockBookService: func(m *mockBookService) *mockBookService {
@@ -139,7 +137,7 @@ func Test_BookController_Save(t *testing.T) {
 		},
 		input:      validBook,
 		statusCode: http.StatusConflict,
-		respBody:   gin.H{ERROR_MESSAGE: BOOK_CONFLICT},
+		respBody:   gin.H{errorMessage: bookConflict},
 	}}
 	for _, tt := range tests {
 		tt := tt
@@ -205,7 +203,7 @@ func Test_BookController_GetByIsbn(t *testing.T) {
 		},
 		isbn:       "test",
 		statusCode: http.StatusNotFound,
-		respBody:   gin.H{ERROR_MESSAGE: BOOK_NOT_FOUND},
+		respBody:   gin.H{errorMessage: bookNotFound},
 	}}
 	for _, tt := range tests {
 		tt := tt

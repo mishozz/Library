@@ -190,3 +190,59 @@ func Test_LoginController_Logout(t *testing.T) {
 		})
 	}
 }
+
+func Test_LoginController_Register(t *testing.T) {
+	tests := []struct {
+		name            string
+		mockUserService func(m *mockUserService) *mockUserService
+		mockAuthRepo    func(m *mockAuthRepo) *mockAuthRepo
+		input           entities.User
+		statusCode      int
+	}{{
+		name: "success",
+		mockUserService: func(m *mockUserService) *mockUserService {
+			m.On("Register", mock.Anything).Return(nil)
+			return m
+		},
+		mockAuthRepo: func(m *mockAuthRepo) *mockAuthRepo {
+			return m
+		},
+		input:      entities.User{Email: "test", Password: "test"},
+		statusCode: 201,
+	}, {
+		name: "bad input",
+		mockUserService: func(m *mockUserService) *mockUserService {
+			return m
+		},
+		mockAuthRepo: func(m *mockAuthRepo) *mockAuthRepo {
+			return m
+		},
+		input:      entities.User{},
+		statusCode: 422,
+	}}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mockAuth := &mockAuthRepo{}
+			mockUserService := &mockUserService{}
+			loginController := NewLoginController(tt.mockAuthRepo(mockAuth), tt.mockUserService(mockUserService))
+
+			w := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(w)
+
+			r.POST("/register", loginController.Register)
+
+			reqBody, err := json.Marshal(tt.input)
+			if err != nil {
+				t.FailNow()
+			}
+
+			c.Request, _ = http.NewRequest(http.MethodPost, "/register", bytes.NewBuffer(reqBody))
+
+			r.ServeHTTP(w, c.Request)
+			assert.Equal(t, tt.statusCode, w.Code)
+			mockAuth.AssertExpectations(t)
+			mockUserService.AssertExpectations(t)
+		})
+	}
+}

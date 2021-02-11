@@ -7,13 +7,14 @@ import (
 )
 
 const (
-	LIBRARY_API_V1 = "/library/api/v1/"
-	ADMIN          = "Admin"
-	USER           = "User"
+	libraryApiV1 = "/library/api/v1/"
+	ADMIN        = "Admin"
+	USER         = "User"
 )
 
+// HandleRequests handles all incoming http requests
 func HandleRequests(server *gin.Engine, bookController controller.BookController, userController controller.UserController, loginController controller.LoginController) {
-	apiRoutes := server.Group(LIBRARY_API_V1)
+	apiRoutes := server.Group(libraryApiV1)
 	{
 		apiRoutes.GET("/books", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
 			bookController.GetAll(ctx)
@@ -46,7 +47,7 @@ func HandleRequests(server *gin.Engine, bookController controller.BookController
 		apiRoutes.GET("users", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
 			userController.GetAll(ctx)
 		})
-		apiRoutes.GET("users/:email", middleware.TokenRoleMiddleware(ADMIN), func(ctx *gin.Context) {
+		apiRoutes.GET("users/:email", middleware.TokenAuthMiddleware(), func(ctx *gin.Context) {
 			userController.GetByEmail(ctx)
 		})
 		apiRoutes.POST("users/:email/:isbn", middleware.TokenRoleMiddleware(USER), func(ctx *gin.Context) {

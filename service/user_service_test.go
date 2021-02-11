@@ -14,7 +14,8 @@ type mockUserRepository struct {
 }
 
 func (m *mockUserRepository) Save(user entities.User) error {
-	return nil
+	args := m.Called(user)
+	return args.Error(0)
 }
 
 func (m *mockUserRepository) FindByEmail(email string) (entities.User, error) {
@@ -263,6 +264,33 @@ func Test_UserService_IsBookTakenByUser(t *testing.T) {
 			assert.Equal(t, tt.expected, flag)
 			mockBookRepository.AssertExpectations(t)
 			mockUserRepository.AssertExpectations(t)
+		})
+	}
+}
+
+func Test_UserService_Register(t *testing.T) {
+	tests := []struct {
+		name         string
+		mockUserRepo func(m *mockUserRepository) *mockUserRepository
+		mockBookRepo func(m *mockBookRepository) *mockBookRepository
+	}{{
+		name: "success",
+		mockUserRepo: func(m *mockUserRepository) *mockUserRepository {
+			m.On("Save", mock.Anything).Return(nil)
+			return m
+		},
+		mockBookRepo: func(m *mockBookRepository) *mockBookRepository {
+			return m
+		},
+	}}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mockUserRepository := &mockUserRepository{}
+			mockBookRepository := &mockBookRepository{}
+			service := NewUserService(tt.mockUserRepo(mockUserRepository), tt.mockBookRepo(mockBookRepository))
+			err := service.Register(entities.User{})
+			assert.Nil(t, err)
 		})
 	}
 }

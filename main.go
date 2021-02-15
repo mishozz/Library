@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mishozz/Library/config"
 	"github.com/mishozz/Library/controller"
-	"github.com/mishozz/Library/entities"
 	"github.com/mishozz/Library/repositories"
 	"github.com/mishozz/Library/router"
 	"github.com/mishozz/Library/service"
@@ -31,12 +30,6 @@ var (
 
 func main() {
 	defer utils.CloseDB(db.Connection)
-
-	user := entities.User{
-		Email: "email@gmail.com",
-		Role:  "Admin",
-	}
-	db.Connection.Create(&user)
 
 	server := gin.New()
 
